@@ -12,18 +12,43 @@ export default function Dashboard() {
   const [schedule, setSchedule] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [streak, setStreak] = useState<any>(null);
 
   const loadSchedule = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/schedules/current`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSchedule(response.data);
+      const [scheduleRes, profileRes, streakRes] = await Promise.all([
+        axios.get(`${API_URL}/api/schedules/current`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/api/user/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/api/milestones/streak`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => ({ data: { current_streak: 0, best_streak: 0 } }))
+      ]);
+      setSchedule(scheduleRes.data);
+      setProfile(profileRes.data);
+      setStreak(streakRes.data);
     } catch (error) {
       console.error('Error loading schedule:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleChildSwitch = async (childId: number) => {
+    try {
+      await axios.post(
+        `${API_URL}/api/user/set-active-child/${childId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      loadSchedule();
+    } catch (error) {
+      console.error('Error switching child:', error);
     }
   };
 
