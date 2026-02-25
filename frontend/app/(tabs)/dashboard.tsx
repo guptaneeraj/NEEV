@@ -88,6 +88,42 @@ export default function Dashboard() {
           </View>
         </View>
 
+        {streak && streak.current_streak > 0 && (
+          <View style={styles.streakCard}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+            <View>
+              <Text style={styles.streakNumber}>{streak.current_streak} day streak!</Text>
+              <Text style={styles.streakBest}>Best: {streak.best_streak} days</Text>
+            </View>
+          </View>
+        )}
+
+        {profile?.children && profile.children.length > 1 && (
+          <View style={styles.childSwitcher}>
+            <Text style={styles.childSwitcherLabel}>Active Child:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.childButtons}>
+              {profile.children.map((child: any) => (
+                <TouchableOpacity
+                  key={child.id}
+                  style={[
+                    styles.childButton,
+                    schedule?.stage_info?.child_id === child.id && styles.childButtonActive
+                  ]}
+                  onPress={() => handleChildSwitch(child.id)}
+                >
+                  <Text style={[
+                    styles.childButtonText,
+                    schedule?.stage_info?.child_id === child.id && styles.childButtonTextActive
+                  ]}>
+                    {child.name}
+                  </Text>
+                  <Text style={styles.childAge}>{child.age_months}mo</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <View style={styles.stageCard}>
           <Ionicons
             name={user?.stage === 'pregnancy' ? 'heart' : 'happy'}
