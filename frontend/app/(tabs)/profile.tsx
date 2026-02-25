@@ -142,7 +142,7 @@ export default function Profile() {
           <TouchableOpacity 
             style={styles.menuItem} 
             activeOpacity={0.7}
-            onPress={handleEditProfile}
+            onPress={() => router.push('/(tabs)/edit-profile')}
           >
             <View style={styles.menuItemLeft}>
               <Ionicons name="person-outline" size={24} color="#2D5F3F" />
@@ -155,7 +155,7 @@ export default function Profile() {
             <TouchableOpacity 
               style={styles.menuItem} 
               activeOpacity={0.7}
-              onPress={handleAddChild}
+              onPress={() => router.push('/(tabs)/add-child')}
             >
               <View style={styles.menuItemLeft}>
                 <Ionicons name="add-circle-outline" size={24} color="#2D5F3F" />
