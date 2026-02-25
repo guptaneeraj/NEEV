@@ -47,7 +47,7 @@ export default function AIAssistant() {
     try {
       // Call local AI endpoint at port 81
       const response = await axios.post(
-        'http://localhost:81/ask',
+        'http://localhost:81/',
         { query: inputText },
         { timeout: 30000 }
       );
