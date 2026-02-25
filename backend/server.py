@@ -32,7 +32,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
 # AI endpoint
-AI_URL = os.getenv("AI_URL", "http://localhost:81/ask")
+AI_URL = os.getenv("AI_URL", "http://localhost:81/")
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
