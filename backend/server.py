@@ -109,13 +109,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        logger.info(f"Decoded JWT payload: {payload}, user_id: {user_id}")
-        if user_id is None:
+        user_id_str: str = payload.get("sub")
+        logger.info(f"Decoded JWT payload: {payload}, user_id_str: {user_id_str}")
+        if user_id_str is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token - no user_id")
+        user_id = int(user_id_str)
     except JWTError as e:
         logger.error(f"JWT decode error: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID")
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
