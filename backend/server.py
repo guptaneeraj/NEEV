@@ -54,19 +54,33 @@ class Token(BaseModel):
 class ChildCreate(BaseModel):
     name: str
     dob: str  # ISO format date string
+    sex: Optional[str]
+    diet_preference: Optional[str]
 
 class ChildResponse(BaseModel):
     id: int
     name: str
     dob: str
     age_months: int
+    sex: Optional[str]
+    diet_preference: Optional[str]
 
 class PregnancyCreate(BaseModel):
+    pregnant_person_name: Optional[str]
+    is_user_pregnant: Optional[bool]
+    relationship_to_pregnant: Optional[str]
     current_week: int
+    diet_preference: Optional[str]
 
 class PregnancyResponse(BaseModel):
     id: int
+    pregnant_person_name: Optional[str]
     current_week: int
+    diet_preference: Optional[str]
+
+class UserUpdate(BaseModel):
+    relationship_type: Optional[str]
+    preferred_activity_time: Optional[str]
 
 class UserProfile(BaseModel):
     id: int
