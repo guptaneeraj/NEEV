@@ -377,14 +377,21 @@ async def get_current_schedule(child_id: Optional[int] = None, current_user: Use
         }
     
     else:  # child stage
-        # Get child
-        if child_id:
-            child = db.query(Child).filter(Child.id == child_id, Child.user_id == current_user.id).first()
+        # Determine which child to use
+        target_child_id = child_id or current_user.active_child_id
+        
+        if target_child_id:
+            child = db.query(Child).filter(Child.id == target_child_id, Child.user_id == current_user.id).first()
         else:
             child = db.query(Child).filter(Child.user_id == current_user.id).first()
         
         if not child:
             raise HTTPException(status_code=404, detail="Child not found")
+        
+        # Set as active if not already
+        if not current_user.active_child_id:
+            current_user.active_child_id = child.id
+            db.commit()
         
         age_months = calculate_age_months(child.dob)
         
@@ -395,12 +402,12 @@ async def get_current_schedule(child_id: Optional[int] = None, current_user: Use
         ).order_by(ScheduleTemplate.stage_value.desc()).first()
         
         if not template:
-            return {"tasks": [], "stage_info": {"type": "child", "age_months": age_months, "name": child.name}}
+            return {"tasks": [], "stage_info": {"type": "child", "age_months": age_months, "name": child.name, "child_id": child.id}}
         
         return {
             "tasks": template.tasks_json,
             "template_id": template.id,
-            "stage_info": {"type": "child", "age_months": age_months, "name": child.name}
+            "stage_info": {"type": "child", "age_months": age_months, "name": child.name, "child_id": child.id}
         }
 
 # ===== Task Routes =====
