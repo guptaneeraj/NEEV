@@ -311,11 +311,29 @@ async def set_pregnancy_info(preg_data: PregnancyCreate, current_user: User = De
     # Remove existing
     db.query(PregnancyInfo).filter(PregnancyInfo.user_id == current_user.id).delete()
     
-    new_preg = PregnancyInfo(user_id=current_user.id, current_week=preg_data.current_week)
+    new_preg = PregnancyInfo(
+        user_id=current_user.id,
+        pregnant_person_name=preg_data.pregnant_person_name,
+        is_user_pregnant=preg_data.is_user_pregnant,
+        relationship_to_pregnant=preg_data.relationship_to_pregnant,
+        current_week=preg_data.current_week,
+        diet_preference=preg_data.diet_preference
+    )
     db.add(new_preg)
     db.commit()
     db.refresh(new_preg)
     return {"id": new_preg.id, "current_week": new_preg.current_week}
+
+@api_router.patch("/user/update")
+async def update_user(user_data: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if user_data.relationship_type is not None:
+        current_user.relationship_type = user_data.relationship_type
+    if user_data.preferred_activity_time is not None:
+        current_user.preferred_activity_time = user_data.preferred_activity_time
+    
+    db.commit()
+    db.refresh(current_user)
+    return {"success": True, "user_id": current_user.id}
 
 # ===== Schedule Routes =====
 @api_router.get("/schedules/current")
