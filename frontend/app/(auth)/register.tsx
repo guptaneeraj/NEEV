@@ -134,22 +134,43 @@ export default function Register() {
   };
 
   const handleSubmit = async () => {
+    if (!activityTime) {
+      Alert.alert('Error', 'Please select preferred activity time');
+      return;
+    }
+
     setLoading(true);
     try {
+      // Step 1: Register user
       await register(email, password, stage);
       
-      const token = (await import('@react-native-async-storage/async-storage')).default.getItem('authToken');
+      // Wait a moment for token to be set
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Save additional user info
+      // Step 2: Get the stored token
+      let authToken;
+      try {
+        authToken = await AsyncStorage.getItem('authToken');
+      } catch (error) {
+        console.log('Could not get token from storage');
+        return;
+      }
+
+      if (!authToken) {
+        throw new Error('No auth token available');
+      }
+
+      // Step 3: Save additional user info
       await axios.patch(
         `${API_URL}/api/user/update`,
         {
           relationship_type: relationship,
           preferred_activity_time: activityTime,
         },
-        { headers: { Authorization: `Bearer ${await token}` } }
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
 
+      // Step 4: Save stage-specific data
       if (stage === 'pregnancy') {
         await axios.post(
           `${API_URL}/api/user/pregnancy`,
@@ -160,7 +181,7 @@ export default function Register() {
             current_week: parseInt(pregnancyWeek),
             diet_preference: pregnancyDiet,
           },
-          { headers: { Authorization: `Bearer ${await token}` } }
+          { headers: { Authorization: `Bearer ${authToken}` } }
         );
       } else {
         await axios.post(
@@ -171,13 +192,15 @@ export default function Register() {
             sex: childSex,
             diet_preference: childDiet,
           },
-          { headers: { Authorization: `Bearer ${await token}` } }
+          { headers: { Authorization: `Bearer ${authToken}` } }
         );
       }
 
+      // Step 5: Navigate to dashboard
       router.replace('/(tabs)/dashboard');
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.detail || 'Registration failed');
+      console.error('Registration error:', error);
+      Alert.alert('Error', error.response?.data?.detail || error.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
