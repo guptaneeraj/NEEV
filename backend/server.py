@@ -414,7 +414,7 @@ async def ask_ai(query_data: AIQueryRequest, db: Session = Depends(get_db)):
             
             # Log query
             log_entry = AIQuery(
-                user_id=current_user.id if current_user else None,
+                user_id=None,
                 query=query_data.query,
                 response=ai_response.get("response", ""),
             )
