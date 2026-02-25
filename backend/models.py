@@ -12,6 +12,7 @@ class User(Base):
     stage = Column(String, nullable=False)  # 'pregnancy' or 'child'
     relationship_type = Column(String, nullable=True)  # Relationship to child
     preferred_activity_time = Column(String, nullable=True)  # Morning/Afternoon/Evening/Custom
+    active_child_id = Column(Integer, nullable=True)  # Currently active child for multi-child users
     created_at = Column(DateTime, default=datetime.utcnow)
     
     children = relationship("Child", back_populates="user", cascade="all, delete-orphan")
