@@ -66,7 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await axios.post(`${API_URL}/api/login`, { email, password });
       const { access_token } = response.data;
-      await AsyncStorage.setItem('authToken', access_token);
+      try {
+        await AsyncStorage.setItem('authToken', access_token);
+      } catch (storageError) {
+        console.log('Storage not available, token in memory only');
+      }
       setToken(access_token);
       await fetchProfile(access_token);
     } catch (error: any) {
@@ -78,7 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await axios.post(`${API_URL}/api/register`, { email, password, stage });
       const { access_token } = response.data;
-      await AsyncStorage.setItem('authToken', access_token);
+      try {
+        await AsyncStorage.setItem('authToken', access_token);
+      } catch (storageError) {
+        console.log('Storage not available, token in memory only');
+      }
       setToken(access_token);
       await fetchProfile(access_token);
     } catch (error: any) {
@@ -87,8 +95,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('authToken');
-    await AsyncStorage.removeItem('demoQueryCount');
+    try {
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('demoQueryCount');
+    } catch (storageError) {
+      console.log('Storage not available');
+    }
     setToken(null);
     setUser(null);
   };
