@@ -66,6 +66,77 @@ class TaskCompletion(Base):
     
     user = relationship("User", back_populates="task_completions")
 
+class TaskNote(Base):
+    __tablename__ = "task_notes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    task_id = Column(String, nullable=False)
+    note = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class CustomTask(Base):
+    __tablename__ = "custom_tasks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    title = Column(String, nullable=False)
+    frequency = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class HealthRecord(Base):
+    __tablename__ = "health_records"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    child_id = Column(Integer, nullable=True)
+    record_type = Column(String, nullable=False)  # weight, height, appointment, vaccination
+    value = Column(String, nullable=True)
+    date = Column(DateTime, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class EducationalContent(Base):
+    __tablename__ = "educational_content"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    stage_type = Column(String, nullable=False)  # pregnancy_week or child_age_months
+    stage_value = Column(Integer, nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    category = Column(String, nullable=True)  # tips, nutrition, milestone
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class MoodLog(Base):
+    __tablename__ = "mood_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    mood = Column(String, nullable=False)  # happy, sad, anxious, tired, etc.
+    notes = Column(Text, nullable=True)
+    date = Column(DateTime, default=datetime.utcnow)
+
+class SleepLog(Base):
+    __tablename__ = "sleep_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    child_id = Column(Integer, nullable=True)
+    sleep_start = Column(DateTime, nullable=False)
+    sleep_end = Column(DateTime, nullable=False)
+    quality = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+
+class Milestone(Base):
+    __tablename__ = "milestones"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    milestone_type = Column(String, nullable=False)  # streak, completion_25, completion_50, etc.
+    achieved_at = Column(DateTime, default=datetime.utcnow)
+    value = Column(Integer, nullable=True)
+
 class AIQuery(Base):
     __tablename__ = "ai_queries"
     
