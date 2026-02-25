@@ -137,6 +137,34 @@ export default function Profile() {
         )}
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tracking</Text>
+
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={() => router.push('/(tabs)/health')}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="fitness-outline" size={24} color="#2D5F3F" />
+              <Text style={styles.menuItemText}>Health Tracking</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={() => router.push('/(tabs)/mood')}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="happy-outline" size={24} color="#2D5F3F" />
+              <Text style={styles.menuItemText}>Mood Tracking</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
 
           <TouchableOpacity 
