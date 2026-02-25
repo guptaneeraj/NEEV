@@ -74,9 +74,9 @@ class PregnancyCreate(BaseModel):
 
 class PregnancyResponse(BaseModel):
     id: int
-    pregnant_person_name: Optional[str]
+    pregnant_person_name: Optional[str] = None
     current_week: int
-    diet_preference: Optional[str]
+    diet_preference: Optional[str] = None
 
 class UserUpdate(BaseModel):
     relationship_type: Optional[str]
