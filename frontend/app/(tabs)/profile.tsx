@@ -1,13 +1,42 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, token, fetchProfile } = useAuth();
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProfile(response.data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadProfile();
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -27,29 +56,94 @@ export default function Profile() {
     );
   };
 
+  const handleAddChild = () => {
+    Alert.alert(
+      'Add Child',
+      'This feature allows you to add multiple children to your profile.',
+      [
+        { text: 'OK' },
+      ]
+    );
+  };
+
+  const handleEditProfile = () => {
+    Alert.alert(
+      'Edit Profile',
+      'Profile editing will be available soon.',
+      [
+        { text: 'OK' },
+      ]
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#A8D5BA" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#A8D5BA" />}
+      >
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <Ionicons name="person" size={48} color="#A8D5BA" />
           </View>
-          <Text style={styles.name}>{user?.email}</Text>
+          <Text style={styles.name}>{profile?.email || user?.email}</Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
-              {user?.stage === 'pregnancy' ? 'Pregnancy Journey' : 'Parenting Journey'}
+              {profile?.stage === 'pregnancy' ? 'Pregnancy Journey' : 'Parenting Journey'}
             </Text>
           </View>
         </View>
 
+        {/* Children List */}
+        {profile?.children && profile.children.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Children</Text>
+            {profile.children.map((child: any) => (
+              <View key={child.id} style={styles.childCard}>
+                <View style={styles.childInfo}>
+                  <Text style={styles.childName}>{child.name}</Text>
+                  <Text style={styles.childAge}>{child.age_months} months old</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Pregnancy Info */}
+        {profile?.pregnancy_info && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Pregnancy</Text>
+            <View style={styles.infoCard}>
+              <Ionicons name="heart" size={24} color="#A8D5BA" />
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Current Week</Text>
+                <Text style={styles.infoValue}>Week {profile.pregnancy_info.current_week}</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={handleEditProfile}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="person-outline" size={24} color="#2D5F3F" />
               <Text style={styles.menuItemText}>Edit Profile</Text>
@@ -57,15 +151,25 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={styles.menuItemLeft}>
-              <Ionicons name="people-outline" size={24} color="#2D5F3F" />
-              <Text style={styles.menuItemText}>Manage Children</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
-          </TouchableOpacity>
+          {user?.stage === 'child' && (
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              activeOpacity={0.7}
+              onPress={handleAddChild}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="add-circle-outline" size={24} color="#2D5F3F" />
+                <Text style={styles.menuItemText}>Add Another Child</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={() => Alert.alert('Notifications', 'Notification settings coming soon')}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="notifications-outline" size={24} color="#2D5F3F" />
               <Text style={styles.menuItemText}>Notifications</Text>
@@ -77,7 +181,11 @@ export default function Profile() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={() => Alert.alert('Help Center', 'Help documentation coming soon')}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="help-circle-outline" size={24} color="#2D5F3F" />
               <Text style={styles.menuItemText}>Help Center</Text>
@@ -85,7 +193,11 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={() => Alert.alert('Terms & Privacy', 'Legal information coming soon')}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="document-text-outline" size={24} color="#2D5F3F" />
               <Text style={styles.menuItemText}>Terms & Privacy</Text>
@@ -93,7 +205,11 @@ export default function Profile() {
             <Ionicons name="chevron-forward" size={20} color="#B0BDB5" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={() => Alert.alert('About NEEV', 'NEEV - Mother & Child Wellness\nVersion 1.0.0\n\nBuilt with ❤️ for parents')}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="information-circle-outline" size={24} color="#2D5F3F" />
               <Text style={styles.menuItemText}>About NEEV</Text>
@@ -120,6 +236,12 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFF9F0',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#FFF9F0',
   },
   header: {
@@ -179,6 +301,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#6B7F71',
     marginBottom: 12,
+  },
+  childCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E0E9E3',
+  },
+  childInfo: {
+    flex: 1,
+  },
+  childName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2D5F3F',
+  },
+  childAge: {
+    fontSize: 14,
+    color: '#6B7F71',
+    marginTop: 4,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    padding: 16,
+    borderRadius: 12,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: '#E0E9E3',
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#6B7F71',
+  },
+  infoValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2D5F3F',
+    marginTop: 4,
   },
   menuItem: {
     flexDirection: 'row',
