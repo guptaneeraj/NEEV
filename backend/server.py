@@ -62,8 +62,8 @@ class ChildResponse(BaseModel):
     name: str
     dob: str
     age_months: int
-    sex: Optional[str]
-    diet_preference: Optional[str]
+    sex: Optional[str] = None
+    diet_preference: Optional[str] = None
 
 class PregnancyCreate(BaseModel):
     pregnant_person_name: Optional[str]
