@@ -405,7 +405,7 @@ async def get_analysis_stats(current_user: User = Depends(get_current_user), db:
 
 # ===== AI Proxy Routes =====
 @api_router.post("/ask", response_model=AIQueryResponse)
-async def ask_ai(query_data: AIQueryRequest, current_user: Optional[User] = None, db: Session = Depends(get_db)):
+async def ask_ai(query_data: AIQueryRequest, db: Session = Depends(get_db)):
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(AI_URL, json={"query": query_data.query})
