@@ -1,6 +1,7 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { AuthProvider } from './contexts/AuthContext';
+import AIAssistant from '../components/AIAssistant';
 
 export default function RootLayout() {
   return (
@@ -10,6 +11,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
       </Stack>
+      <AIAssistant />
     </AuthProvider>
   );
 }
