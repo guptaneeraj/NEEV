@@ -341,6 +341,17 @@ async def update_user(user_data: UserUpdate, current_user: User = Depends(get_cu
     db.refresh(current_user)
     return {"success": True, "user_id": current_user.id}
 
+@api_router.post("/user/set-active-child/{child_id}")
+async def set_active_child(child_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Verify child belongs to user
+    child = db.query(Child).filter(Child.id == child_id, Child.user_id == current_user.id).first()
+    if not child:
+        raise HTTPException(status_code=404, detail="Child not found")
+    
+    current_user.active_child_id = child_id
+    db.commit()
+    return {"success": True, "active_child_id": child_id}
+
 # ===== Schedule Routes =====
 @api_router.get("/schedules/current")
 async def get_current_schedule(child_id: Optional[int] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
