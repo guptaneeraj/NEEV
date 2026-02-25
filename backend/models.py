@@ -10,6 +10,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     stage = Column(String, nullable=False)  # 'pregnancy' or 'child'
+    relationship = Column(String, nullable=True)  # Relationship to child
+    preferred_activity_time = Column(String, nullable=True)  # Morning/Afternoon/Evening/Custom
     created_at = Column(DateTime, default=datetime.utcnow)
     
     children = relationship("Child", back_populates="user", cascade="all, delete-orphan")
@@ -23,6 +25,8 @@ class Child(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     dob = Column(DateTime, nullable=False)
+    sex = Column(String, nullable=True)  # Male/Female/Prefer not to say
+    diet_preference = Column(String, nullable=True)  # Vegetarian/Eggetarian/Non-vegetarian
     created_at = Column(DateTime, default=datetime.utcnow)
     
     user = relationship("User", back_populates="children")
@@ -32,7 +36,11 @@ class PregnancyInfo(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    pregnant_person_name = Column(String, nullable=True)
+    is_user_pregnant = Column(Boolean, default=True)
+    relationship_to_pregnant = Column(String, nullable=True)
     current_week = Column(Integer, nullable=False)
+    diet_preference = Column(String, nullable=True)  # Vegetarian/Eggetarian/Non-vegetarian
     created_at = Column(DateTime, default=datetime.utcnow)
     
     user = relationship("User", back_populates="pregnancy_info")
