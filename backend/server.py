@@ -300,7 +300,13 @@ async def get_profile(current_user: User = Depends(get_current_user), db: Sessio
 @api_router.post("/user/child")
 async def add_child(child_data: ChildCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     dob = datetime.fromisoformat(child_data.dob.replace('Z', '+00:00'))
-    new_child = Child(user_id=current_user.id, name=child_data.name, dob=dob)
+    new_child = Child(
+        user_id=current_user.id,
+        name=child_data.name,
+        dob=dob,
+        sex=child_data.sex,
+        diet_preference=child_data.diet_preference
+    )
     db.add(new_child)
     db.commit()
     db.refresh(new_child)
