@@ -10,7 +10,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     stage = Column(String, nullable=False)  # 'pregnancy' or 'child'
-    relationship = Column(String, nullable=True)  # Relationship to child
+    relationship_type = Column(String, nullable=True)  # Relationship to child
     preferred_activity_time = Column(String, nullable=True)  # Morning/Afternoon/Evening/Custom
     created_at = Column(DateTime, default=datetime.utcnow)
     
