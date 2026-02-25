@@ -487,6 +487,164 @@ async def ask_ai(query_data: AIQueryRequest, db: Session = Depends(get_db)):
         logging.error(f"AI request failed: {str(e)}")
         raise HTTPException(status_code=500, detail="AI service unavailable")
 
+# ===== Task Notes & Custom Tasks =====
+@api_router.post("/tasks/note")
+async def add_task_note(task_id: str, note: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import TaskNote
+    task_note = TaskNote(user_id=current_user.id, task_id=task_id, note=note)
+    db.add(task_note)
+    db.commit()
+    return {"success": True}
+
+@api_router.get("/tasks/{task_id}/notes")
+async def get_task_notes(task_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import TaskNote
+    notes = db.query(TaskNote).filter(TaskNote.user_id == current_user.id, TaskNote.task_id == task_id).all()
+    return [{"id": n.id, "note": n.note, "created_at": n.created_at.isoformat()} for n in notes]
+
+@api_router.post("/tasks/custom")
+async def create_custom_task(title: str, frequency: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import CustomTask
+    task = CustomTask(user_id=current_user.id, title=title, frequency=frequency)
+    db.add(task)
+    db.commit()
+    return {"id": task.id, "title": task.title}
+
+@api_router.get("/tasks/custom")
+async def get_custom_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import CustomTask
+    tasks = db.query(CustomTask).filter(CustomTask.user_id == current_user.id, CustomTask.is_active == True).all()
+    return [{"id": t.id, "title": t.title, "frequency": t.frequency} for t in tasks]
+
+# ===== Health Tracking =====
+@api_router.post("/health/record")
+async def add_health_record(record_type: str, value: str, date: str, child_id: Optional[int] = None, notes: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import HealthRecord
+    record_date = datetime.fromisoformat(date)
+    record = HealthRecord(user_id=current_user.id, child_id=child_id, record_type=record_type, value=value, date=record_date, notes=notes)
+    db.add(record)
+    db.commit()
+    return {"id": record.id, "type": record.record_type}
+
+@api_router.get("/health/records")
+async def get_health_records(child_id: Optional[int] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import HealthRecord
+    query = db.query(HealthRecord).filter(HealthRecord.user_id == current_user.id)
+    if child_id:
+        query = query.filter(HealthRecord.child_id == child_id)
+    records = query.order_by(HealthRecord.date.desc()).all()
+    return [{"id": r.id, "type": r.record_type, "value": r.value, "date": r.date.isoformat(), "notes": r.notes} for r in records]
+
+# ===== Mood & Sleep Tracking =====
+@api_router.post("/mood/log")
+async def log_mood(mood: str, notes: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import MoodLog
+    log = MoodLog(user_id=current_user.id, mood=mood, notes=notes)
+    db.add(log)
+    db.commit()
+    return {"id": log.id, "mood": log.mood}
+
+@api_router.get("/mood/logs")
+async def get_mood_logs(days: int = 30, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import MoodLog
+    since_date = datetime.utcnow() - timedelta(days=days)
+    logs = db.query(MoodLog).filter(MoodLog.user_id == current_user.id, MoodLog.date >= since_date).order_by(MoodLog.date.desc()).all()
+    return [{"id": l.id, "mood": l.mood, "notes": l.notes, "date": l.date.isoformat()} for l in logs]
+
+@api_router.post("/sleep/log")
+async def log_sleep(sleep_start: str, sleep_end: str, quality: Optional[str] = None, child_id: Optional[int] = None, notes: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import SleepLog
+    start = datetime.fromisoformat(sleep_start)
+    end = datetime.fromisoformat(sleep_end)
+    log = SleepLog(user_id=current_user.id, child_id=child_id, sleep_start=start, sleep_end=end, quality=quality, notes=notes)
+    db.add(log)
+    db.commit()
+    return {"id": log.id, "duration_hours": (end - start).total_seconds() / 3600}
+
+@api_router.get("/sleep/logs")
+async def get_sleep_logs(child_id: Optional[int] = None, days: int = 30, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import SleepLog
+    since_date = datetime.utcnow() - timedelta(days=days)
+    query = db.query(SleepLog).filter(SleepLog.user_id == current_user.id, SleepLog.sleep_start >= since_date)
+    if child_id:
+        query = query.filter(SleepLog.child_id == child_id)
+    logs = query.order_by(SleepLog.sleep_start.desc()).all()
+    return [{"id": l.id, "start": l.sleep_start.isoformat(), "end": l.sleep_end.isoformat(), "quality": l.quality, "notes": l.notes, "duration_hours": (l.sleep_end - l.sleep_start).total_seconds() / 3600} for l in logs]
+
+# ===== Milestones & Streaks =====
+@api_router.get("/milestones/streak")
+async def get_streak(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Calculate consecutive days with completed tasks
+    completions = db.query(TaskCompletion).filter(TaskCompletion.user_id == current_user.id).order_by(TaskCompletion.completed_at.desc()).all()
+    if not completions:
+        return {"current_streak": 0, "best_streak": 0}
+    
+    dates = set()
+    for c in completions:
+        dates.add(c.completed_at.date())
+    
+    sorted_dates = sorted(dates, reverse=True)
+    current_streak = 0
+    best_streak = 0
+    temp_streak = 1
+    
+    if sorted_dates:
+        today = datetime.utcnow().date()
+        if sorted_dates[0] == today or sorted_dates[0] == today - timedelta(days=1):
+            current_streak = 1
+            for i in range(1, len(sorted_dates)):
+                if sorted_dates[i] == sorted_dates[i-1] - timedelta(days=1):
+                    current_streak += 1
+                    temp_streak += 1
+                else:
+                    break
+        
+        temp_streak = 1
+        for i in range(1, len(sorted_dates)):
+            if sorted_dates[i] == sorted_dates[i-1] - timedelta(days=1):
+                temp_streak += 1
+                best_streak = max(best_streak, temp_streak)
+            else:
+                temp_streak = 1
+    
+    return {"current_streak": current_streak, "best_streak": max(best_streak, current_streak)}
+
+@api_router.post("/milestones/record")
+async def record_milestone(milestone_type: str, value: Optional[int] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import Milestone
+    existing = db.query(Milestone).filter(Milestone.user_id == current_user.id, Milestone.milestone_type == milestone_type).first()
+    if not existing:
+        milestone = Milestone(user_id=current_user.id, milestone_type=milestone_type, value=value)
+        db.add(milestone)
+        db.commit()
+        return {"success": True, "new_milestone": True}
+    return {"success": True, "new_milestone": False}
+
+# ===== Educational Content =====
+@api_router.get("/education/content")
+async def get_educational_content(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import EducationalContent
+    if current_user.stage == "pregnancy":
+        preg_info = db.query(PregnancyInfo).filter(PregnancyInfo.user_id == current_user.id).first()
+        if preg_info:
+            content = db.query(EducationalContent).filter(
+                EducationalContent.stage_type == "pregnancy_week",
+                EducationalContent.stage_value == preg_info.current_week
+            ).all()
+            return [{"id": c.id, "title": c.title, "content": c.content, "category": c.category} for c in content]
+    else:
+        child_id = current_user.active_child_id
+        if child_id:
+            child = db.query(Child).filter(Child.id == child_id).first()
+            if child:
+                age_months = calculate_age_months(child.dob)
+                content = db.query(EducationalContent).filter(
+                    EducationalContent.stage_type == "child_age_months",
+                    EducationalContent.stage_value == age_months
+                ).all()
+                return [{"id": c.id, "title": c.title, "content": c.content, "category": c.category} for c in content]
+    return []
+
 # ===== Root Route =====
 @api_router.get("/")
 async def root():
