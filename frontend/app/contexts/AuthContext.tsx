@@ -39,7 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await fetchProfile(storedToken);
       }
     } catch (error) {
-      console.error('Error loading token:', error);
+      // AsyncStorage not available on web, skip
+      console.log('Storage not available');
     } finally {
       setIsLoading(false);
     }
