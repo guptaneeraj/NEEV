@@ -1,14 +1,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# Use the local neev.db file in this directory
+DB_PATH = Path(__file__).parent / "neev.db"
+DATABASE_URL = f"sqlite:///{DB_PATH}"
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/neev_db")
+# For SQLite, we need 'check_same_thread: False' to allow multithreading
+engine = create_engine(
+    DATABASE_URL, connect_args={"check_same_thread": False}
+)
 
-engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

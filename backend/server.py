@@ -1,682 +1,753 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, status
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-from datetime import datetime, timedelta, timezone
-from pydantic import BaseModel, EmailStr, Field
-from typing import List, Optional
-import os
 import logging
-from pathlib import Path
+import os
+import json
+import uuid
+import random
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime, timezone, date, timedelta
+from typing import Optional, List, Dict, Any
+from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
+import asyncio
+
+# Load Environment Variables
 from dotenv import load_dotenv
-import httpx
-from dateutil.relativedelta import relativedelta
+load_dotenv()
 
-from database import engine, get_db, Base
-from models import User, Child, PregnancyInfo, ScheduleTemplate, TaskCompletion, AIQuery
+from database import get_db, SessionLocal, engine, Base
+from models import User, Child, MasterActivity, PlanTemplate, MoodLog, HealthRecord, TaskCompletion, Milestone
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
-# Create database tables
+# Create tables automatically on startup
 Base.metadata.create_all(bind=engine)
 
-# Security
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
+# Constants
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+CONVERSATIONS_DIR = os.path.join(DATA_DIR, "conversations")
+VECTOR_DB_DIR = os.path.join(DATA_DIR, "vector_db")
 
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 30
+# Hostinger SMTP Settings (Read from env/web.config)
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "support@neevios.com")
+SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "q#F5$~T1CT+")
+SMTP_SERVER = "smtp.hostinger.com"
+SMTP_PORT = 465
 
-# AI endpoint - try host machine first, fallback to localhost
-AI_URL = os.getenv("AI_URL", "http://10.219.7.129:81/")
+for d in [DATA_DIR, CONVERSATIONS_DIR, VECTOR_DB_DIR]:
+    if not os.path.exists(d):
+        os.makedirs(d, exist_ok=True)
 
-app = FastAPI()
-api_router = APIRouter(prefix="/api")
+PARENT_TYPES = [
+    "Mother", "Father", "Grandmother", "Grandfather", "Guardian", "Caregiver",
+    "Aunt", "Uncle", "Foster Parent", "Adoptive Parent", "Stepmother", "Stepfather"
+]
 
-# ===== Pydantic Models =====
-class UserRegister(BaseModel):
-    email: EmailStr
-    password: str
-    stage: str  # 'pregnancy' or 'child'
+# In-memory OTP storage: { "identifier": "code" }
+temp_otp_store = {}
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+# --- SESSION MANAGEMENT ---
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+class SessionState:
+    def __init__(self, session_id: str):
+        self.session_id = session_id
+        self.file_path = os.path.join(CONVERSATIONS_DIR, f"{session_id}.json")
+        self.data = self._load()
 
-class ChildCreate(BaseModel):
+    def _load(self) -> Dict[str, Any]:
+        if os.path.exists(self.file_path):
+            with open(self.file_path, 'r') as f:
+                return json.load(f)
+        return {
+            "parent_name": None,
+            "parent_type": None,
+            "child_name": None,
+            "child_age_months": None,
+            "child_sex": None,
+            "child_diet": None,
+            "is_anonymous": False,
+            "child_is_anonymous": False,
+            "onboarding_complete": False,
+            "pending_edit_field": None,
+            "started_at": datetime.now(timezone.utc).isoformat(),
+            "messages": [],
+            "child_profile_ext": {} # Store extra profile data
+        }
+
+    def save(self):
+        with open(self.file_path, 'w') as f:
+            json.dump(self.data, f, indent=2)
+
+# --- REQUEST MODELS ---
+
+class ChildProfile(BaseModel):
+    full_name: Optional[str] = None
+    relationship_type: Optional[str] = None
+    child_name: Optional[str] = None
+    child_dob: Optional[str] = None  # YYYY-MM-DD
+    child_sex: Optional[str] = None
+    diet_preference: Optional[str] = None
+    preferred_plan_type: Optional[str] = None
+    preferred_time_of_day: Optional[str] = None
+    preferred_activity_time: Optional[str] = None
+    stage: Optional[str] = "parenting"
+    current_week: Optional[int] = None
+    mood_logs: Optional[List[Any]] = []
+    health_records: Optional[List[Any]] = []
+    task_completions: Optional[List[str]] = []
+
+class UserIDRequest(BaseModel):
+    user_id: str
+
+class ChatRequest(BaseModel):
+    question: str
+    session_id: Optional[str] = None
+    user_id: str
+    child_profile: Optional[ChildProfile] = None
+
+class GuidanceRequest(BaseModel):
+    session_id: str
+    user_id: str
+    child_profile: Optional[ChildProfile] = None
+
+class UpdateProfileRequest(BaseModel):
+    session_id: str
+    field: str
+    value: Any
+    user_id: str
+
+class OTPRequest(BaseModel):
+    identifier: str
+
+class OTPVerifyRequest(BaseModel):
+    identifier: str
+    otp: str
+
+class CreateChildRequest(BaseModel):
     name: str
-    dob: str  # ISO format date string
-    sex: Optional[str]
-    diet_preference: Optional[str]
-
-class ChildResponse(BaseModel):
-    id: int
-    name: str
-    dob: str
-    age_months: int
+    dob: str # YYYY-MM-DD
     sex: Optional[str] = None
     diet_preference: Optional[str] = None
 
-class PregnancyCreate(BaseModel):
-    pregnant_person_name: Optional[str]
-    is_user_pregnant: Optional[bool]
-    relationship_to_pregnant: Optional[str]
+class CreateMoodLogRequest(BaseModel):
+    mood: str
+    notes: Optional[str] = None
+    date: Optional[str] = None
+
+class CreateHealthRecordRequest(BaseModel):
+    record_type: str
+    value: str
+    unit: Optional[str] = None
+    date: str
+    notes: Optional[str] = None
+
+class ToggleTaskRequest(BaseModel):
+    activity_name: str
+    week: int
+
+class UpdatePregnancyRequest(BaseModel):
     current_week: int
-    diet_preference: Optional[str]
+    due_date: Optional[str] = None
+    is_user_pregnant: bool = True
 
-class PregnancyResponse(BaseModel):
-    id: int
-    pregnant_person_name: Optional[str] = None
-    current_week: int
-    diet_preference: Optional[str] = None
+class CreateMilestoneRequest(BaseModel):
+    child_id: Optional[int] = None
+    title: str
+    notes: Optional[str] = None
+    age_months: Optional[int] = None
 
-class UserUpdate(BaseModel):
-    relationship_type: Optional[str]
-    preferred_activity_time: Optional[str]
+# --- UTILS ---
 
-class UserProfile(BaseModel):
-    id: int
-    email: str
-    stage: str
-    children: List[ChildResponse]
-    pregnancy_info: Optional[PregnancyResponse]
+def normalize_id(identifier: str) -> str:
+    return identifier.strip().lower()
 
-class TaskComplete(BaseModel):
-    task_id: str
-    template_id: Optional[int]
+def send_email_otp(target_email: str, otp_code: str):
+    msg = MIMEText(f"Your NEEV verification code is: {otp_code}")
+    msg['Subject'] = "Your NEEV verification code"
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = target_email
 
-class AIQueryRequest(BaseModel):
-    query: str
-
-class AIQueryResponse(BaseModel):
-    response: str
-
-class AnalysisStats(BaseModel):
-    total_tasks: int
-    completed_tasks: int
-    completion_percentage: float
-    weekly_adherence: float
-    completion_by_date: List[dict]
-
-# ===== Helper Functions =====
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)) -> User:
-    token = credentials.credentials
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id_str: str = payload.get("sub")
-        logger.info(f"Decoded JWT payload: {payload}, user_id_str: {user_id_str}")
-        if user_id_str is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token - no user_id")
-        user_id = int(user_id_str)
-    except JWTError as e:
-        logger.error(f"JWT decode error: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}")
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user ID")
-    
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    return user
-
-def calculate_age_months(dob: datetime) -> int:
-    today = datetime.now()
-    return (today.year - dob.year) * 12 + today.month - dob.month
-
-# ===== Initialize Demo Schedule Templates =====
-def initialize_demo_templates(db: Session):
-    # Check if templates exist
-    existing = db.query(ScheduleTemplate).first()
-    if existing:
-        return
-    
-    # Pregnancy templates (weeks 1-40)
-    pregnancy_templates = [
-        {
-            "stage_type": "pregnancy_week",
-            "stage_value": 1,
-            "tasks_json": [
-                {"id": "p1_1", "title": "Take prenatal vitamins", "frequency": "daily"},
-                {"id": "p1_2", "title": "Schedule first prenatal appointment", "frequency": "once"},
-                {"id": "p1_3", "title": "Stay hydrated (8 glasses water)", "frequency": "daily"}
-            ]
-        },
-        {
-            "stage_type": "pregnancy_week",
-            "stage_value": 12,
-            "tasks_json": [
-                {"id": "p12_1", "title": "Take prenatal vitamins", "frequency": "daily"},
-                {"id": "p12_2", "title": "Light exercise (20 min walk)", "frequency": "daily"},
-                {"id": "p12_3", "title": "Pelvic floor exercises", "frequency": "daily"},
-                {"id": "p12_4", "title": "Eat healthy snacks", "frequency": "daily"}
-            ]
-        },
-        {
-            "stage_type": "pregnancy_week",
-            "stage_value": 24,
-            "tasks_json": [
-                {"id": "p24_1", "title": "Take prenatal vitamins", "frequency": "daily"},
-                {"id": "p24_2", "title": "Monitor baby movements", "frequency": "daily"},
-                {"id": "p24_3", "title": "Practice prenatal yoga", "frequency": "3x/week"},
-                {"id": "p24_4", "title": "Stay hydrated", "frequency": "daily"},
-                {"id": "p24_5", "title": "Rest when tired", "frequency": "daily"}
-            ]
-        }
-    ]
-    
-    # Child templates (0-36 months)
-    child_templates = [
-        {
-            "stage_type": "child_age_months",
-            "stage_value": 0,
-            "tasks_json": [
-                {"id": "c0_1", "title": "Feed every 2-3 hours", "frequency": "8x/day"},
-                {"id": "c0_2", "title": "Tummy time (5 min)", "frequency": "daily"},
-                {"id": "c0_3", "title": "Track diaper changes", "frequency": "daily"},
-                {"id": "c0_4", "title": "Ensure adequate sleep (16-17 hrs)", "frequency": "daily"}
-            ]
-        },
-        {
-            "stage_type": "child_age_months",
-            "stage_value": 6,
-            "tasks_json": [
-                {"id": "c6_1", "title": "Introduce solid foods", "frequency": "2x/day"},
-                {"id": "c6_2", "title": "Tummy time (15 min)", "frequency": "daily"},
-                {"id": "c6_3", "title": "Read to baby", "frequency": "daily"},
-                {"id": "c6_4", "title": "Play with colorful toys", "frequency": "daily"}
-            ]
-        },
-        {
-            "stage_type": "child_age_months",
-            "stage_value": 12,
-            "tasks_json": [
-                {"id": "c12_1", "title": "Serve 3 meals + 2 snacks", "frequency": "daily"},
-                {"id": "c12_2", "title": "Encourage walking practice", "frequency": "daily"},
-                {"id": "c12_3", "title": "Read picture books", "frequency": "daily"},
-                {"id": "c12_4", "title": "Play interactive games", "frequency": "daily"},
-                {"id": "c12_5", "title": "Naptime (2x per day)", "frequency": "daily"}
-            ]
-        },
-        {
-            "stage_type": "child_age_months",
-            "stage_value": 24,
-            "tasks_json": [
-                {"id": "c24_1", "title": "Encourage self-feeding", "frequency": "daily"},
-                {"id": "c24_2", "title": "Practice potty training", "frequency": "daily"},
-                {"id": "c24_3", "title": "Read stories together", "frequency": "daily"},
-                {"id": "c24_4", "title": "Outdoor playtime (30 min)", "frequency": "daily"},
-                {"id": "c24_5", "title": "Arts and crafts", "frequency": "3x/week"}
-            ]
-        }
-    ]
-    
-    all_templates = pregnancy_templates + child_templates
-    for template_data in all_templates:
-        template = ScheduleTemplate(**template_data)
-        db.add(template)
-    
-    db.commit()
-
-# ===== Authentication Routes =====
-@api_router.post("/register", response_model=Token)
-async def register(user_data: UserRegister, db: Session = Depends(get_db)):
-    # Check if user exists
-    existing = db.query(User).filter(User.email == user_data.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Create user
-    hashed_pw = hash_password(user_data.password)
-    new_user = User(email=user_data.email, password_hash=hashed_pw, stage=user_data.stage)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    # Create token
-    access_token = create_access_token(data={"sub": str(new_user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@api_router.post("/login", response_model=Token)
-async def login(credentials: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == credentials.email).first()
-    if not user or not verify_password(credentials.password, user.password_hash):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-    
-    access_token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@api_router.get("/verify-token")
-async def verify_token(current_user: User = Depends(get_current_user)):
-    return {"valid": True, "user_id": current_user.id}
-
-# ===== User Profile Routes =====
-@api_router.get("/user/profile", response_model=UserProfile)
-async def get_profile(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    children_data = []
-    for child in current_user.children:
-        age_months = calculate_age_months(child.dob)
-        children_data.append({
-            "id": child.id,
-            "name": child.name,
-            "dob": child.dob.isoformat(),
-            "age_months": age_months
-        })
-    
-    pregnancy_data = None
-    if current_user.pregnancy_info:
-        pregnancy_data = {
-            "id": current_user.pregnancy_info[0].id,
-            "current_week": current_user.pregnancy_info[0].current_week
-        }
-    
-    return {
-        "id": current_user.id,
-        "email": current_user.email,
-        "stage": current_user.stage,
-        "children": children_data,
-        "pregnancy_info": pregnancy_data
-    }
-
-@api_router.post("/user/child")
-async def add_child(child_data: ChildCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    dob = datetime.fromisoformat(child_data.dob.replace('Z', '+00:00'))
-    new_child = Child(
-        user_id=current_user.id,
-        name=child_data.name,
-        dob=dob,
-        sex=child_data.sex,
-        diet_preference=child_data.diet_preference
-    )
-    db.add(new_child)
-    db.commit()
-    db.refresh(new_child)
-    return {"id": new_child.id, "name": new_child.name, "dob": new_child.dob.isoformat()}
-
-@api_router.post("/user/pregnancy")
-async def set_pregnancy_info(preg_data: PregnancyCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Remove existing
-    db.query(PregnancyInfo).filter(PregnancyInfo.user_id == current_user.id).delete()
-    
-    new_preg = PregnancyInfo(
-        user_id=current_user.id,
-        pregnant_person_name=preg_data.pregnant_person_name,
-        is_user_pregnant=preg_data.is_user_pregnant,
-        relationship_to_pregnant=preg_data.relationship_to_pregnant,
-        current_week=preg_data.current_week,
-        diet_preference=preg_data.diet_preference
-    )
-    db.add(new_preg)
-    db.commit()
-    db.refresh(new_preg)
-    return {"id": new_preg.id, "current_week": new_preg.current_week}
-
-@api_router.patch("/user/update")
-async def update_user(user_data: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if user_data.relationship_type is not None:
-        current_user.relationship_type = user_data.relationship_type
-    if user_data.preferred_activity_time is not None:
-        current_user.preferred_activity_time = user_data.preferred_activity_time
-    
-    db.commit()
-    db.refresh(current_user)
-    return {"success": True, "user_id": current_user.id}
-
-@api_router.post("/user/set-active-child/{child_id}")
-async def set_active_child(child_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Verify child belongs to user
-    child = db.query(Child).filter(Child.id == child_id, Child.user_id == current_user.id).first()
-    if not child:
-        raise HTTPException(status_code=404, detail="Child not found")
-    
-    current_user.active_child_id = child_id
-    db.commit()
-    return {"success": True, "active_child_id": child_id}
-
-# ===== Schedule Routes =====
-@api_router.get("/schedules/current")
-async def get_current_schedule(child_id: Optional[int] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.stage == "pregnancy":
-        # Get pregnancy info
-        preg_info = db.query(PregnancyInfo).filter(PregnancyInfo.user_id == current_user.id).first()
-        if not preg_info:
-            raise HTTPException(status_code=404, detail="Pregnancy info not found")
-        
-        # Find closest template
-        template = db.query(ScheduleTemplate).filter(
-            ScheduleTemplate.stage_type == "pregnancy_week",
-            ScheduleTemplate.stage_value <= preg_info.current_week
-        ).order_by(ScheduleTemplate.stage_value.desc()).first()
-        
-        if not template:
-            return {"tasks": [], "stage_info": {"type": "pregnancy", "week": preg_info.current_week}}
-        
-        return {
-            "tasks": template.tasks_json,
-            "template_id": template.id,
-            "stage_info": {"type": "pregnancy", "week": preg_info.current_week}
-        }
-    
-    else:  # child stage
-        # Determine which child to use
-        target_child_id = child_id or current_user.active_child_id
-        
-        if target_child_id:
-            child = db.query(Child).filter(Child.id == target_child_id, Child.user_id == current_user.id).first()
-        else:
-            child = db.query(Child).filter(Child.user_id == current_user.id).first()
-        
-        if not child:
-            raise HTTPException(status_code=404, detail="Child not found")
-        
-        # Set as active if not already
-        if not current_user.active_child_id:
-            current_user.active_child_id = child.id
-            db.commit()
-        
-        age_months = calculate_age_months(child.dob)
-        
-        # Find closest template
-        template = db.query(ScheduleTemplate).filter(
-            ScheduleTemplate.stage_type == "child_age_months",
-            ScheduleTemplate.stage_value <= age_months
-        ).order_by(ScheduleTemplate.stage_value.desc()).first()
-        
-        if not template:
-            return {"tasks": [], "stage_info": {"type": "child", "age_months": age_months, "name": child.name, "child_id": child.id}}
-        
-        return {
-            "tasks": template.tasks_json,
-            "template_id": template.id,
-            "stage_info": {"type": "child", "age_months": age_months, "name": child.name, "child_id": child.id}
-        }
-
-# ===== Task Routes =====
-@api_router.post("/tasks/complete")
-async def complete_task(task_data: TaskComplete, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    completion = TaskCompletion(
-        user_id=current_user.id,
-        task_id=task_data.task_id,
-        template_id=task_data.template_id
-    )
-    db.add(completion)
-    db.commit()
-    return {"success": True, "completed_at": completion.completed_at.isoformat()}
-
-@api_router.get("/tasks/completed")
-async def get_completed_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    completions = db.query(TaskCompletion).filter(TaskCompletion.user_id == current_user.id).all()
-    return [{"task_id": c.task_id, "completed_at": c.completed_at.isoformat()} for c in completions]
-
-# ===== Analysis Routes =====
-@api_router.get("/analysis/stats", response_model=AnalysisStats)
-async def get_analysis_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Get current schedule
-    schedule_data = await get_current_schedule(current_user=current_user, db=db)
-    total_tasks = len(schedule_data.get("tasks", []))
-    
-    # Get completions from last 7 days
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
-    completions = db.query(TaskCompletion).filter(
-        TaskCompletion.user_id == current_user.id,
-        TaskCompletion.completed_at >= seven_days_ago
-    ).all()
-    
-    completed_tasks = len(completions)
-    completion_percentage = (completed_tasks / (total_tasks * 7) * 100) if total_tasks > 0 else 0
-    
-    # Weekly adherence (unique tasks completed in last 7 days)
-    unique_tasks = len(set(c.task_id for c in completions))
-    weekly_adherence = (unique_tasks / total_tasks * 100) if total_tasks > 0 else 0
-    
-    # Group by date
-    completion_by_date = {}
-    for c in completions:
-        date_key = c.completed_at.date().isoformat()
-        completion_by_date[date_key] = completion_by_date.get(date_key, 0) + 1
-    
-    completion_list = [{"date": k, "count": v} for k, v in completion_by_date.items()]
-    
-    return {
-        "total_tasks": total_tasks,
-        "completed_tasks": completed_tasks,
-        "completion_percentage": round(completion_percentage, 1),
-        "weekly_adherence": round(weekly_adherence, 1),
-        "completion_by_date": completion_list
-    }
-
-# ===== AI Proxy Routes =====
-@api_router.post("/ask", response_model=AIQueryResponse)
-async def ask_ai(query_data: AIQueryRequest, db: Session = Depends(get_db)):
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(AI_URL, json={"query": query_data.query})
-            response.raise_for_status()
-            ai_response = response.json()
-            
-            # Log query
-            log_entry = AIQuery(
-                user_id=None,
-                query=query_data.query,
-                response=ai_response.get("response", ""),
-            )
-            db.add(log_entry)
-            db.commit()
-            
-            return {"response": ai_response.get("response", "")}
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, target_email, msg.as_string())
+        print(f"OTP email sent to {target_email}")
+        return True
     except Exception as e:
-        logging.error(f"AI request failed: {str(e)}")
-        raise HTTPException(status_code=500, detail="AI service unavailable")
+        print(f"Failed to send email: {e}")
+        return False
 
-# ===== Task Notes & Custom Tasks =====
-@api_router.post("/tasks/note")
-async def add_task_note(task_id: str, note: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import TaskNote
-    task_note = TaskNote(user_id=current_user.id, task_id=task_id, note=note)
-    db.add(task_note)
-    db.commit()
-    return {"success": True}
+def calculate_age_months(dob_str: str) -> int:
+    try:
+        dob = date.fromisoformat(dob_str)
+        today = date.today()
+        return (today.year - dob.year) * 12 + today.month - dob.month
+    except:
+        return 0
 
-@api_router.get("/tasks/{task_id}/notes")
-async def get_task_notes(task_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import TaskNote
-    notes = db.query(TaskNote).filter(TaskNote.user_id == current_user.id, TaskNote.task_id == task_id).all()
-    return [{"id": n.id, "note": n.note, "created_at": n.created_at.isoformat()} for n in notes]
-
-@api_router.post("/tasks/custom")
-async def create_custom_task(title: str, frequency: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import CustomTask
-    task = CustomTask(user_id=current_user.id, title=title, frequency=frequency)
-    db.add(task)
-    db.commit()
-    return {"id": task.id, "title": task.title}
-
-@api_router.get("/tasks/custom")
-async def get_custom_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import CustomTask
-    tasks = db.query(CustomTask).filter(CustomTask.user_id == current_user.id, CustomTask.is_active == True).all()
-    return [{"id": t.id, "title": t.title, "frequency": t.frequency} for t in tasks]
-
-# ===== Health Tracking =====
-@api_router.post("/health/record")
-async def add_health_record(record_type: str, value: str, date: str, child_id: Optional[int] = None, notes: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import HealthRecord
-    record_date = datetime.fromisoformat(date)
-    record = HealthRecord(user_id=current_user.id, child_id=child_id, record_type=record_type, value=value, date=record_date, notes=notes)
-    db.add(record)
-    db.commit()
-    return {"id": record.id, "type": record.record_type}
-
-@api_router.get("/health/records")
-async def get_health_records(child_id: Optional[int] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import HealthRecord
-    query = db.query(HealthRecord).filter(HealthRecord.user_id == current_user.id)
-    if child_id:
-        query = query.filter(HealthRecord.child_id == child_id)
-    records = query.order_by(HealthRecord.date.desc()).all()
-    return [{"id": r.id, "type": r.record_type, "value": r.value, "date": r.date.isoformat(), "notes": r.notes} for r in records]
-
-# ===== Mood & Sleep Tracking =====
-@api_router.post("/mood/log")
-async def log_mood(mood: str, notes: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import MoodLog
-    log = MoodLog(user_id=current_user.id, mood=mood, notes=notes)
-    db.add(log)
-    db.commit()
-    return {"id": log.id, "mood": log.mood}
-
-@api_router.get("/mood/logs")
-async def get_mood_logs(days: int = 30, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import MoodLog
-    since_date = datetime.utcnow() - timedelta(days=days)
-    logs = db.query(MoodLog).filter(MoodLog.user_id == current_user.id, MoodLog.date >= since_date).order_by(MoodLog.date.desc()).all()
-    return [{"id": l.id, "mood": l.mood, "notes": l.notes, "date": l.date.isoformat()} for l in logs]
-
-@api_router.post("/sleep/log")
-async def log_sleep(sleep_start: str, sleep_end: str, quality: Optional[str] = None, child_id: Optional[int] = None, notes: Optional[str] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import SleepLog
-    start = datetime.fromisoformat(sleep_start)
-    end = datetime.fromisoformat(sleep_end)
-    log = SleepLog(user_id=current_user.id, child_id=child_id, sleep_start=start, sleep_end=end, quality=quality, notes=notes)
-    db.add(log)
-    db.commit()
-    return {"id": log.id, "duration_hours": (end - start).total_seconds() / 3600}
-
-@api_router.get("/sleep/logs")
-async def get_sleep_logs(child_id: Optional[int] = None, days: int = 30, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import SleepLog
-    since_date = datetime.utcnow() - timedelta(days=days)
-    query = db.query(SleepLog).filter(SleepLog.user_id == current_user.id, SleepLog.sleep_start >= since_date)
-    if child_id:
-        query = query.filter(SleepLog.child_id == child_id)
-    logs = query.order_by(SleepLog.sleep_start.desc()).all()
-    return [{"id": l.id, "start": l.sleep_start.isoformat(), "end": l.sleep_end.isoformat(), "quality": l.quality, "notes": l.notes, "duration_hours": (l.sleep_end - l.sleep_start).total_seconds() / 3600} for l in logs]
-
-# ===== Milestones & Streaks =====
-@api_router.get("/milestones/streak")
-async def get_streak(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Calculate consecutive days with completed tasks
-    completions = db.query(TaskCompletion).filter(TaskCompletion.user_id == current_user.id).order_by(TaskCompletion.completed_at.desc()).all()
-    if not completions:
-        return {"current_streak": 0, "best_streak": 0}
+def update_session_from_profile(state: SessionState, profile: ChildProfile):
+    if profile.full_name:
+        state.data["parent_name"] = profile.full_name
+        if profile.full_name == "Anonymous":
+            state.data["is_anonymous"] = True
+    if profile.relationship_type:
+        state.data["parent_type"] = profile.relationship_type
+    if profile.child_name:
+        state.data["child_name"] = profile.child_name
+        if profile.child_name == "Private":
+            state.data["child_is_anonymous"] = True
+    if profile.child_dob:
+        state.data["child_age_months"] = calculate_age_months(profile.child_dob)
+    if profile.child_sex:
+        state.data["child_sex"] = profile.child_sex
+    if profile.diet_preference:
+        state.data["child_diet"] = profile.diet_preference
     
-    dates = set()
-    for c in completions:
-        dates.add(c.completed_at.date())
+    # Store extended data
+    state.data["child_profile_ext"] = profile.model_dump()
     
-    sorted_dates = sorted(dates, reverse=True)
-    current_streak = 0
-    best_streak = 0
-    temp_streak = 1
+    # Mark onboarding complete if basic info is present
+    if profile.child_name and profile.child_dob and profile.relationship_type:
+        state.data["onboarding_complete"] = True
     
-    if sorted_dates:
-        today = datetime.utcnow().date()
-        if sorted_dates[0] == today or sorted_dates[0] == today - timedelta(days=1):
-            current_streak = 1
-            for i in range(1, len(sorted_dates)):
-                if sorted_dates[i] == sorted_dates[i-1] - timedelta(days=1):
-                    current_streak += 1
-                    temp_streak += 1
-                else:
-                    break
-        
-        temp_streak = 1
-        for i in range(1, len(sorted_dates)):
-            if sorted_dates[i] == sorted_dates[i-1] - timedelta(days=1):
-                temp_streak += 1
-                best_streak = max(best_streak, temp_streak)
-            else:
-                temp_streak = 1
-    
-    return {"current_streak": current_streak, "best_streak": max(best_streak, current_streak)}
+    state.save()
 
-@api_router.post("/milestones/record")
-async def record_milestone(milestone_type: str, value: Optional[int] = None, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import Milestone
-    existing = db.query(Milestone).filter(Milestone.user_id == current_user.id, Milestone.milestone_type == milestone_type).first()
-    if not existing:
-        milestone = Milestone(user_id=current_user.id, milestone_type=milestone_type, value=value)
-        db.add(milestone)
-        db.commit()
-        return {"success": True, "new_milestone": True}
-    return {"success": True, "new_milestone": False}
+def get_current_user(request: Request, db: Session):
+    auth_header = request.headers.get("Authorization")
+    if auth_header and "Bearer mock-token-" in auth_header:
+        try:
+            parts = auth_header.split("-")
+            if len(parts) >= 3:
+                extracted_id = int(parts[2])
+                return db.query(User).filter(User.id == extracted_id).first()
+        except:
+            pass
+    return db.query(User).first() # Fallback for dev
 
-# ===== Educational Content =====
-@api_router.get("/education/content")
-async def get_educational_content(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    from models import EducationalContent
-    if current_user.stage == "pregnancy":
-        preg_info = db.query(PregnancyInfo).filter(PregnancyInfo.user_id == current_user.id).first()
-        if preg_info:
-            content = db.query(EducationalContent).filter(
-                EducationalContent.stage_type == "pregnancy_week",
-                EducationalContent.stage_value == preg_info.current_week
-            ).all()
-            return [{"id": c.id, "title": c.title, "content": c.content, "category": c.category} for c in content]
-    else:
-        child_id = current_user.active_child_id
-        if child_id:
-            child = db.query(Child).filter(Child.id == child_id).first()
-            if child:
-                age_months = calculate_age_months(child.dob)
-                content = db.query(EducationalContent).filter(
-                    EducationalContent.stage_type == "child_age_months",
-                    EducationalContent.stage_value == age_months
-                ).all()
-                return [{"id": c.id, "title": c.title, "content": c.content, "category": c.category} for c in content]
-    return []
+# --- API ---
 
-# ===== Root Route =====
-@api_router.get("/")
-async def root():
-    return {"message": "NEEV API - Mother and Child Wellness App"}
-
-# Include router
-app.include_router(api_router)
-
-# CORS
+app = FastAPI(title="Neev AI API")
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Session-ID"]
 )
 
-# Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+api_router = APIRouter()
 
-# Initialize demo data on startup
-@app.on_event("startup")
-async def startup_event():
-    db = next(get_db())
-    initialize_demo_templates(db)
-    db.close()
-    logger.info("NEEV API started successfully")
+# --- AUTH BRIDGE ENDPOINTS ---
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("NEEV API shutting down")
+@api_router.post("/api/auth/send-otp")
+async def send_otp(req: OTPRequest):
+    identifier = normalize_id(req.identifier)
+    otp_code = str(random.randint(100000, 999999))
+    temp_otp_store[identifier] = otp_code
+
+    if "@" in identifier:
+        send_email_otp(identifier, otp_code)
+
+    print(f"\n[AUTH] OTP for {identifier}: {otp_code}\n")
+    return {"message": "OTP sent successfully"}
+
+@api_router.post("/api/auth/verify-otp")
+async def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
+    identifier = normalize_id(req.identifier)
+    stored_otp = temp_otp_store.get(identifier)
+
+    print(f"DEBUG: Verifying OTP for '{identifier}'. Provided: '{req.otp}', Stored: '{stored_otp}'")
+
+    if stored_otp and req.otp == stored_otp:
+        del temp_otp_store[identifier]
+        
+        user = db.query(User).filter(
+            (User.email == identifier) | (User.phone_number == identifier)
+        ).first()
+
+        if not user:
+            user = User(
+                email=identifier if "@" in identifier else None,
+                phone_number=identifier if "@" not in identifier else None,
+                hashed_password="social_auth_placeholder",
+                full_name="New User",
+                onboarding_complete=False
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        return {
+            "access_token": f"mock-token-{user.id}-{uuid.uuid4()}",
+            "user_id": str(user.id),
+            "onboarding_complete": user.onboarding_complete
+        }
+    
+    if not stored_otp:
+         raise HTTPException(status_code=400, detail=f"No OTP found for {identifier}. Please request a new one.")
+
+    raise HTTPException(status_code=400, detail="Invalid OTP. Please check the code and try again.")
+
+@api_router.get("/api/user/profile")
+async def get_profile(request: Request, user_id: Optional[str] = None, db: Session = Depends(get_db)):
+    user = None
+    if user_id:
+        user = db.query(User).filter(User.id == int(user_id)).first()
+    else:
+        user = get_current_user(request, db)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    return {
+        "id": str(user.id),
+        "full_name": user.full_name,
+        "relationship_type": user.relationship_type,
+        "stage": user.stage,
+        "email": user.email,
+        "phone_number": user.phone_number,
+        "onboarding_complete": user.onboarding_complete,
+        "children": [
+            {
+                "id": str(c.id),
+                "name": c.name,
+                "dob": c.dob.isoformat() if c.dob else None,
+                "sex": c.sex,
+                "diet_preference": c.diet_preference,
+                "age_months": calculate_age_months(c.dob.date().isoformat()) if c.dob else 0
+            } for c in user.children
+        ]
+    }
+
+@api_router.patch("/api/user/update")
+async def update_user(request: Request, update_data: Dict[str, Any], db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+        
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    for key, value in update_data.items():
+        if hasattr(user, key):
+            setattr(user, key, value)
+            
+    db.commit()
+    db.refresh(user)
+    return {
+        "status": "success",
+        "user": {
+            "id": str(user.id),
+            "full_name": user.full_name,
+            "onboarding_complete": user.onboarding_complete
+        }
+    }
+
+@api_router.post("/api/user/child")
+async def add_child(req: CreateChildRequest, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    new_child = Child(
+        user_id=user.id,
+        name=req.name,
+        dob=datetime.fromisoformat(req.dob),
+        sex=req.sex,
+        diet_preference=req.diet_preference
+    )
+    db.add(new_child)
+    
+    user.onboarding_complete = True 
+    db.commit()
+    db.refresh(new_child)
+    return {
+        "id": str(new_child.id),
+        "name": new_child.name,
+        "onboarding_complete": user.onboarding_complete
+    }
+
+@api_router.get("/api/mood/logs")
+async def get_mood_logs(request: Request, days: int = 30, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    logs = db.query(MoodLog).filter(MoodLog.user_id == user.id).order_by(MoodLog.date.desc()).limit(days).all()
+    return logs
+
+@api_router.post("/api/mood/log")
+async def log_mood(req: CreateMoodLogRequest, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    log_date = datetime.fromisoformat(req.date) if req.date else datetime.now(timezone.utc)
+    new_log = MoodLog(
+        user_id=user.id,
+        mood=req.mood,
+        notes=req.notes,
+        date=log_date
+    )
+    db.add(new_log)
+    db.commit()
+    db.refresh(new_log)
+    return new_log
+
+@api_router.get("/api/health/records")
+async def get_health_records(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    records = db.query(HealthRecord).filter(HealthRecord.user_id == user.id).order_by(HealthRecord.date.desc()).all()
+    return records
+
+@api_router.post("/api/health/record")
+async def add_health_record(req: CreateHealthRecordRequest, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    new_record = HealthRecord(
+        user_id=user.id,
+        record_type=req.record_type,
+        value=req.value,
+        unit=req.unit,
+        date=datetime.fromisoformat(req.date),
+        notes=req.notes
+    )
+    db.add(new_record)
+    db.commit()
+    db.refresh(new_record)
+    return new_record
+
+@api_router.get("/api/schedules/current")
+async def get_current_schedule(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    plan = db.query(PlanTemplate).filter(PlanTemplate.plan_type == (user.preferred_plan_type or "20_min_plan")).first()
+    
+    if not plan:
+        return {"needs_plan": True}
+        
+    completions = db.query(TaskCompletion).filter(
+        TaskCompletion.user_id == user.id,
+        TaskCompletion.week == plan.week
+    ).all()
+    completed_names = {c.activity_name for c in completions}
+    
+    tasks = []
+    for activity in plan.activities_json:
+        tasks.append({
+            "title": activity["title"],
+            "completed": activity["title"] in completed_names
+        })
+        
+    return {
+        "week": plan.week,
+        "plan_type": plan.plan_type,
+        "time_preference": user.preferred_activity_time or "Not set",
+        "tasks": tasks
+    }
+
+@api_router.post("/api/tasks/toggle")
+async def toggle_task(req: ToggleTaskRequest, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    existing = db.query(TaskCompletion).filter(
+        TaskCompletion.user_id == user.id,
+        TaskCompletion.activity_name == req.activity_name,
+        TaskCompletion.week == req.week
+    ).first()
+    
+    if existing:
+        db.delete(existing)
+        status = "incomplete"
+    else:
+        new_completion = TaskCompletion(
+            user_id=user.id,
+            activity_name=req.activity_name,
+            week=req.week,
+            completed_at=datetime.now(timezone.utc)
+        )
+        db.add(new_completion)
+        status = "complete"
+        
+    db.commit()
+    return {"status": status}
+
+@api_router.get("/api/milestones/streak")
+async def get_streak(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Get all unique completion dates for this user, sorted descending
+    completions = db.query(TaskCompletion.completed_at)\
+        .filter(TaskCompletion.user_id == user.id)\
+        .order_by(TaskCompletion.completed_at.desc())\
+        .all()
+    
+    if not completions:
+        return {"current_streak": 0, "best_streak": 0}
+
+    # Convert to set of date objects to handle multiple tasks on same day
+    completion_dates = sorted({c.completed_at.date() for c in completions}, reverse=True)
+    
+    today = date.today()
+    current_streak = 0
+    
+    # Calculate current streak
+    # Check if the most recent completion was today or yesterday
+    if completion_dates[0] >= today - timedelta(days=1):
+        temp_date = completion_dates[0]
+        current_streak = 1
+        for i in range(1, len(completion_dates)):
+            if completion_dates[i] == temp_date - timedelta(days=1):
+                current_streak += 1
+                temp_date = completion_dates[i]
+            else:
+                break
+    
+    # Calculate best streak
+    best_streak = 0
+    if completion_dates:
+        temp_streak = 1
+        best_streak = 1
+        for i in range(1, len(completion_dates)):
+            if completion_dates[i] == completion_dates[i-1] - timedelta(days=1):
+                temp_streak += 1
+            else:
+                best_streak = max(best_streak, temp_streak)
+                temp_streak = 1
+        best_streak = max(best_streak, temp_streak)
+
+    return {
+        "current_streak": current_streak,
+        "best_streak": best_streak
+    }
+
+@api_router.post("/api/pregnancy/update")
+async def update_pregnancy(req: UpdatePregnancyRequest, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    preg_info = user.pregnancy_info
+    if not preg_info:
+        from models import PregnancyInfo
+        preg_info = PregnancyInfo(user_id=user.id)
+        db.add(preg_info)
+    
+    preg_info.current_week = req.current_week
+    preg_info.is_user_pregnant = req.is_user_pregnant
+    if req.due_date:
+        preg_info.due_date = datetime.fromisoformat(req.due_date)
+    
+    db.commit()
+    db.refresh(preg_info)
+    return preg_info
+
+@api_router.post("/api/milestones/log")
+async def log_milestone(req: CreateMilestoneRequest, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    new_milestone = Milestone(
+        user_id=user.id,
+        child_id=req.child_id,
+        title=req.title,
+        notes=req.notes,
+        age_months=req.age_months
+    )
+    db.add(new_milestone)
+    db.commit()
+    db.refresh(new_milestone)
+    return new_milestone
+
+@api_router.get("/api/milestones")
+async def get_milestones(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    return db.query(Milestone).filter(Milestone.user_id == user.id).all()
+
+# --- NEEV AI DATA CONTRACT ENDPOINTS (ai.neevios.com) ---
+
+@api_router.post("/children/list")
+async def list_children(req: UserIDRequest, db: Session = Depends(get_db)):
+    results = []
+
+    try:
+        user_id_int = int(req.user_id)
+        db_children = db.query(Child).filter(Child.user_id == user_id_int).all()
+        for c in db_children:
+            results.append({
+                "session_id": f"sql-{c.id}",
+                "child_name": c.name,
+                "child_age_months": calculate_age_months(c.dob.date().isoformat()) if c.dob else 0,
+                "child_sex": c.sex or "Male",
+                "parent_name": "Parent",
+                "parent_type": "Mother",
+                "started_at": datetime.now(timezone.utc).isoformat()
+            })
+    except ValueError:
+        pass
+
+    if os.path.exists(CONVERSATIONS_DIR):
+        for filename in os.listdir(CONVERSATIONS_DIR):
+            if filename.endswith(".json"):
+                session_id = filename.replace(".json", "")
+                state = SessionState(session_id)
+                if state.data.get("child_name"):
+                    results.append({
+                        "session_id": session_id,
+                        "child_name": state.data["child_name"],
+                        "child_age_months": state.data["child_age_months"],
+                        "child_sex": state.data["child_sex"],
+                        "parent_name": state.data["parent_name"],
+                        "parent_type": state.data["parent_type"],
+                        "started_at": state.data["started_at"]
+                    })
+
+    return {"children": results}
+
+@api_router.post("/ai/ask")
+async def ai_ask(req: ChatRequest, response: Response):
+    session_id = req.session_id
+    if not session_id:
+        session_id = str(uuid.uuid4())
+
+    state = SessionState(session_id)
+    response.headers["X-Session-ID"] = session_id
+
+    # Sync profile if provided
+    if req.child_profile:
+        update_session_from_profile(state, req.child_profile)
+
+    async def event_generator():
+        # Handle Onboarding Flow
+        if not state.data["onboarding_complete"]:
+            yield await handle_onboarding(state, req.question)
+            return
+
+        # Normal Chat Logic
+        if req.question != "start":
+            state.data["messages"].append({
+                "role": "user",
+                "content": req.question,
+                "time": datetime.now(timezone.utc).isoformat()
+            })
+
+        # Personalize based on profile
+        name = state.data.get("child_name") or "your child"
+        age = state.data.get("child_age_months") or "some"
+
+        full_answer = f"Hello! Regarding {name} ({age} months), you asked: {req.question}"
+        if req.question == "start":
+            full_answer = f"Welcome back! How can I help with {name} today?"
+
+        for token in full_answer.split():
+            yield json.dumps({"token": token + " "}) + "\n"
+            await asyncio.sleep(0.05)
+
+        state.data["messages"].append({
+            "role": "assistant",
+            "content": full_answer,
+            "time": datetime.now(timezone.utc).isoformat()
+        })
+        state.save()
+        yield json.dumps({"done": True}) + "\n"
+
+    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
+
+async def handle_onboarding(state: SessionState, question: str) -> str:
+    steps = ["parent_name", "parent_type", "child_name", "child_age_months", "child_sex", "child_diet"]
+
+    current_step_idx = 0
+    for i, field in enumerate(steps):
+        if state.data[field] is None:
+            current_step_idx = i
+            break
+        else:
+            current_step_idx = i + 1
+
+    if question != "start" and current_step_idx < len(steps):
+        field_to_save = steps[current_step_idx]
+        state.data[field_to_save] = question
+        state.save()
+        current_step_idx += 1
+
+    if current_step_idx >= len(steps):
+        state.data["onboarding_complete"] = True
+        state.save()
+        return json.dumps({
+            "answer": f"All set! Ready to help with {state.data['child_name']}.",
+            "needs_onboarding": False,
+            "onboarding_complete": True,
+            "profile": state.data
+        }) + "\n"
+
+    field = steps[current_step_idx]
+    prompts = {
+        "parent_name": ("What is your name?", "parent_name", []),
+        "parent_type": ("What is your relationship to the child?", "parent_type", PARENT_TYPES),
+        "child_name": ("What is your child's name?", "child_name", []),
+        "child_age_months": ("How old is your child in months?", "child_age", list(range(37))),
+        "child_sex": ("What is your child's sex?", "child_sex", ["Male", "Female", "Prefer not to say"]),
+        "child_diet": ("What is your child's diet?", "child_diet", ["Vegetarian", "Non-Vegetarian", "Eggetarian"])
+    }
+
+    answer_text, options_type, options = prompts[field]
+
+    return json.dumps({
+        "answer": answer_text,
+        "needs_onboarding": True,
+        "show_options": len(options) > 0 or options_type in ["parent_name", "child_name"],
+        "options_type": options_type,
+        "options": options,
+        "step": current_step_idx + 1,
+        "total_steps": 6
+    }) + "\n"
+
+@api_router.post("/ai/guidance")
+async def ai_guidance(req: GuidanceRequest, db: Session = Depends(get_db)):
+    state = SessionState(req.session_id)
+
+    # Sync profile if provided
+    if req.child_profile:
+        update_session_from_profile(state, req.child_profile)
+
+    if not state.data["onboarding_complete"]:
+        return {
+            "mode": "onboarding",
+            "message": "No child profile found."
+        }
+
+    activities = db.query(MasterActivity).limit(2).all()
+    tasks = []
+    for a in activities:
+        tasks.append({
+            "title": a.activity,
+            "reason": a.description[:50],
+            "priority": random.choice(["high", "medium", "low"])
+        })
+
+    return {
+        "session_id": req.session_id,
+        "daily_tasks": tasks,
+        "insight": f"{state.data.get('child_name', 'Your child')} is doing well with milestones.",
+        "recommendation": "Try reading for 10 minutes today.",
+        "alert": False
+    }
+
+@api_router.post("/update-profile")
+async def update_profile(req: UpdateProfileRequest):
+    state = SessionState(req.session_id)
+    state.data[req.field] = req.value
+    state.save()
+    return {
+        "success": True,
+        "field": req.field,
+        "profile": state.data
+    }
+
+app.include_router(api_router)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)

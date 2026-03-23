@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEEV | Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-[#FFF9F0] text-[#2D5F3F] font-sans" x-data="adminPanel()">
+
+    <!-- Top Navigation -->
+    <nav class="bg-white border-b border-[#E0E9E3] px-8 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="bg-[#A8D5BA] p-2 rounded-lg">
+                <span class="font-bold text-xl tracking-tighter">NEEV</span>
+            </div>
+            <h1 class="text-sm font-semibold uppercase tracking-widest text-[#6B7F71]">Control Center</h1>
+        </div>
+        <div class="flex items-center gap-6">
+            <template x-if="loggedIn">
+                <div class="flex items-center gap-4">
+                    <span class="text-xs font-bold bg-[#F0F8F4] px-3 py-1 rounded-full border border-[#A8D5BA]" x-text="userRole"></span>
+                    <button @click="logout()" class="text-sm text-red-500 hover:underline">Logout</button>
+                </div>
+            </template>
+        </div>
+    </nav>
+
+    <!-- Login Screen -->
+    <template x-if="!loggedIn">
+        <div class="max-w-md mx-auto mt-32 p-8 bg-white rounded-3xl shadow-xl border border-[#E0E9E3]">
+            <h2 class="text-2xl font-bold mb-6 text-center">Admin Access</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase mb-2">Identifier (Email/Phone)</label>
+                    <input x-model="loginId" type="text" class="w-full p-4 bg-[#FFF9F0] border border-[#E0E9E3] rounded-xl outline-none focus:border-[#A8D5BA]" placeholder="admin@neev.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase mb-2">OTP</label>
+                    <input x-model="loginOtp" type="password" class="w-full p-4 bg-[#FFF9F0] border border-[#E0E9E3] rounded-xl outline-none focus:border-[#A8D5BA]" placeholder="123456">
+                </div>
+                <button @click="login()" class="w-full py-4 bg-[#A8D5BA] text-[#2D5F3F] font-bold rounded-xl shadow-md hover:opacity-90 transition">Enter Dashboard</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Dashboard Content -->
+    <template x-if="loggedIn">
+        <div class="max-w-7xl mx-auto p-8">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div class="bg-white p-8 rounded-3xl border border-[#E0E9E3] shadow-sm">
+                    <p class="text-xs font-bold text-[#6B7F71] uppercase mb-2">Total Users</p>
+                    <p class="text-4xl font-black" x-text="stats.total_users || 0"></p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl border border-[#E0E9E3] shadow-sm">
+                    <p class="text-xs font-bold text-[#6B7F71] uppercase mb-2">Total AI Queries</p>
+                    <p class="text-4xl font-black" x-text="stats.total_queries || 0"></p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl border border-[#E0E9E3] shadow-sm">
+                    <p class="text-xs font-bold text-[#6B7F71] uppercase mb-2">Active Roles</p>
+                    <p class="text-4xl font-black text-[#A8D5BA]">Live</p>
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div class="bg-white rounded-3xl border border-[#E0E9E3] overflow-hidden shadow-sm">
+                <div class="p-6 border-b border-[#E0E9E3] flex justify-between items-center">
+                    <h3 class="font-bold text-lg">User Directory</h3>
+                    <button @click="fetchStats()" class="text-xs bg-[#FFF9F0] px-4 py-2 rounded-lg border border-[#E0E9E3] hover:bg-white transition">Refresh Data</button>
+                </div>
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-[#F0F8F4] text-xs font-bold uppercase tracking-wider">
+                            <th class="px-6 py-4">User</th>
+                            <th class="px-6 py-4">Identifier</th>
+                            <th class="px-6 py-4">Role</th>
+                            <th class="px-6 py-4">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm">
+                        <tr class="border-b border-[#F0F8F4] hover:bg-[#FFF9F0] transition">
+                            <td class="px-6 py-4 font-medium text-[#2D5F3F]">Master Admin</td>
+                            <td class="px-6 py-4 text-[#6B7F71]">support@neevios.com</td>
+                            <td class="px-6 py-4"><span class="bg-[#A8D5BA] text-[10px] font-bold px-2 py-1 rounded">ADMIN</span></td>
+                            <td class="px-6 py-4 text-green-500 font-bold">● Active</td>
+                        </tr>
+                        <!-- More users would be mapped here from an API endpoint -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        function adminPanel() {
+            return {
+                loggedIn: false,
+                token: localStorage.getItem('adminToken'),
+                userRole: localStorage.getItem('adminRole') || 'USER',
+                loginId: '',
+                loginOtp: '',
+                stats: {},
+
+                init() {
+                    if (this.token) {
+                        this.loggedIn = true;
+                        this.fetchStats();
+                    }
+                },
+
+                async login() {
+                    try {
+                        const res = await fetch('http://localhost:8001/api/auth/verify-otp', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ identifier: this.loginId, otp: this.loginOtp })
+                        });
+                        const data = await res.json();
+                        if (data.access_token) {
+                            localStorage.setItem('adminToken', data.access_token);
+                            localStorage.setItem('adminRole', data.role);
+                            this.token = data.access_token;
+                            this.userRole = data.role;
+                            this.loggedIn = true;
+                            this.fetchStats();
+                        } else {
+                            alert('Login Failed');
+                        }
+                    } catch (e) {
+                        alert('Connection Error to Backend');
+                    }
+                },
+
+                async fetchStats() {
+                    try {
+                        const res = await fetch('http://localhost:8001/api/admin/stats', {
+                            headers: { 'Authorization': `Bearer ${this.token}` }
+                        });
+                        if (res.status === 200) {
+                            this.stats = await res.json();
+                        } else if (res.status === 403) {
+                            alert('Access Denied: You are not an admin.');
+                            this.logout();
+                        }
+                    } catch (e) {
+                        console.error('Stats fetch error');
+                    }
+                },
+
+                logout() {
+                    localStorage.clear();
+                    this.loggedIn = false;
+                    this.token = null;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

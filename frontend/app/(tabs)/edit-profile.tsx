@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = process.env.BACKEND_URL || 'https://api.neevios.com';
 
 const ACTIVITY_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Custom time'];
 const RELATIONSHIP_OPTIONS = ['Mother', 'Father', 'Grandmother', 'Grandfather', 'Guardian', 'Caregiver', 'Other'];
 
 export default function EditProfile() {
-  const router = useRouter();
+  const navigation = useNavigation<any>();
   const { token, user, fetchProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [relationship, setRelationship] = useState('');
@@ -52,7 +52,7 @@ export default function EditProfile() {
 
       await fetchProfile();
       Alert.alert('Success', 'Profile updated successfully!');
-      router.back();
+      navigation.goBack();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to update profile');
     } finally {
@@ -64,7 +64,7 @@ export default function EditProfile() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#2D5F3F" />
           </TouchableOpacity>
           <Text style={styles.title}>Edit Profile</Text>

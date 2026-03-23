@@ -1,0 +1,143 @@
+# NEEV — Complete Database Schema
+# File: neev.db (SQLite)
+# Location: C:/agentic-ai/neev-project/backend/neev.db
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 1: users
+# ═══════════════════════════════════════════════════════════════
+users:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  email                   TEXT        UNIQUE NOT NULL
+  hashed_password         TEXT        NOT NULL
+  full_name               TEXT
+  relationship_type       TEXT        # Mother/Father/Grandmother/etc
+  stage                   TEXT        # "parenting" or "pregnancy"
+  preferred_plan_type     TEXT        # "20_min_plan" / "40_min_plan" / "60_min_plan"
+  preferred_time_of_day   TEXT        # "morning" / "afternoon" / "night"
+  preferred_activity_time TEXT        # "08:00 AM" etc
+  onboarding_complete     BOOLEAN     DEFAULT FALSE
+  created_at              DATETIME    DEFAULT now()
+  otp                     TEXT        # for email verification
+  otp_expiry              DATETIME
+  is_verified             BOOLEAN     DEFAULT FALSE
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 2: children
+# ═══════════════════════════════════════════════════════════════
+children:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  user_id                 INTEGER     FOREIGN KEY → users.id
+  name                    TEXT        NOT NULL
+  dob                     DATETIME    NOT NULL    # Date of Birth YYYY-MM-DD
+  sex                     TEXT                    # "Male" / "Female"
+  diet_preference         TEXT                    # "Vegetarian" / "Non-Vegetarian" / "Eggetarian"
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 3: pregnancy_info
+# ═══════════════════════════════════════════════════════════════
+pregnancy_info:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  user_id                 INTEGER     FOREIGN KEY → users.id UNIQUE
+  current_week            INTEGER                 # Week 1-42
+  is_user_pregnant        BOOLEAN     DEFAULT TRUE
+  relationship_to_pregnant TEXT                   # "Self" / "Partner" / "Caregiver"
+  due_date                DATETIME
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 4: plan_templates
+# ═══════════════════════════════════════════════════════════════
+plan_templates:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  plan_type               TEXT        NOT NULL    # "20_min_plan" / "40_min_plan" / "60_min_plan"
+  week                    INTEGER     NOT NULL    # Week number 1-36
+  domain                  TEXT                    # e.g. "Cognitive" / "Motor" / "Language"
+  activities_json         JSON        NOT NULL
+  # activities_json structure:
+  # [
+  #   { "title": "Tummy Time", "domain": "Motor", "completed": false },
+  #   { "title": "Story Time", "domain": "Language", "completed": false }
+  # ]
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 5: master_activities
+# ═══════════════════════════════════════════════════════════════
+master_activities:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  activity                TEXT        NOT NULL    # Activity name — matches title in plan_templates
+  domain                  TEXT                    # "Cognitive" / "Motor" / "Language" / "Social"
+  description             TEXT                    # Full description shown to parent
+  tools                   TEXT                    # Toys/tools needed (future feature)
+  session_min             INTEGER                 # Minimum session duration in minutes
+  session_max             INTEGER                 # Maximum session duration in minutes
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 6: task_completions
+# ═══════════════════════════════════════════════════════════════
+task_completions:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  user_id                 INTEGER     FOREIGN KEY → users.id
+  activity_name           TEXT        NOT NULL    # Matches master_activities.activity
+  week                    INTEGER     NOT NULL
+  completed_at            DATETIME    DEFAULT now()
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 7: mood_logs
+# ═══════════════════════════════════════════════════════════════
+mood_logs:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  user_id                 INTEGER     FOREIGN KEY → users.id
+  mood                    TEXT        NOT NULL    # "Happy"/"Calm"/"Anxious"/"Tired"/"Excited"/"Overwhelmed"/"Grateful"
+  notes                   TEXT
+  date                    DATETIME    DEFAULT now()
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 8: health_records
+# ═══════════════════════════════════════════════════════════════
+health_records:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  user_id                 INTEGER     FOREIGN KEY → users.id
+  record_type             TEXT        NOT NULL    # "Weight" / "Height" / "Sleep" / "Vaccination"
+  value                   TEXT        NOT NULL    # e.g. "7.5" for kg, "65" for cm
+  unit                    TEXT                    # "kg" / "cm" / "hours" / null
+  date                    DATETIME    NOT NULL
+  notes                   TEXT
+
+# ═══════════════════════════════════════════════════════════════
+# TABLE 9: milestones (future — track achieved milestones)
+# ═══════════════════════════════════════════════════════════════
+milestones:
+  id                      INTEGER     PRIMARY KEY AUTOINCREMENT
+  user_id                 INTEGER     FOREIGN KEY → users.id
+  child_id                INTEGER     FOREIGN KEY → children.id
+  title                   TEXT        NOT NULL    # "First Smile" / "Sits Unsupported" etc
+  achieved_at             DATETIME    DEFAULT now()
+  notes                   TEXT
+  age_months              INTEGER                 # Age when achieved
+
+# ═══════════════════════════════════════════════════════════════
+# RELATIONSHIPS SUMMARY
+# ═══════════════════════════════════════════════════════════════
+# users          → children         (one to many)
+# users          → pregnancy_info   (one to one)
+# users          → task_completions (one to many)
+# users          → mood_logs        (one to many)
+# users          → health_records   (one to many)
+# users          → milestones       (one to many)
+# children       → milestones       (one to many)
+# plan_templates → task_completions (activity_name links loosely)
+# master_activities → plan_templates (activity title links loosely)
+
+# ═══════════════════════════════════════════════════════════════
+# WHAT AI BACKEND (ai.neevios.com) READS FROM APP
+# ═══════════════════════════════════════════════════════════════
+# The AI never reads the database directly.
+# The app sends this data in child_profile on every AI call:
+#
+# From users:      full_name, relationship_type, stage,
+#                  preferred_plan_type, preferred_time_of_day,
+#                  preferred_activity_time
+# From children:   name, dob (→ age_months calculated), sex, diet_preference
+# From pregnancy:  current_week (if stage=pregnancy)
+# From task_completions: last 10 activity_name values
+# From mood_logs:  last 5 entries {mood, notes, date}
+# From health_records: last 5 entries {record_type, value, date}

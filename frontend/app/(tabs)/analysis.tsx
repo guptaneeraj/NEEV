@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import axios from 'axios';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = process.env.BACKEND_URL || 'https://api.neevios.com';
 const screenWidth = Dimensions.get('window').width;
 
 export default function Analysis() {
@@ -175,125 +175,28 @@ export default function Analysis() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF9F0',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF9F0',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#2D5F3F',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7F71',
-    marginTop: 4,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingHorizontal: 24,
-    marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#E0E9E3',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2D5F3F',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6B7F71',
-  },
-  chartCard: {
-    backgroundColor: '#FFF',
-    marginHorizontal: 24,
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E0E9E3',
-  },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2D5F3F',
-    marginBottom: 16,
-  },
-  chartContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  centerLabel: {
-    alignItems: 'center',
-  },
-  centerLabelValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2D5F3F',
-  },
-  centerLabelText: {
-    fontSize: 12,
-    color: '#6B7F71',
-  },
-  legend: {
-    gap: 8,
-    marginTop: 16,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 14,
-    color: '#6B7F71',
-  },
-  barChartContainer: {
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-    gap: 16,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#6B7F71',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#B0BDB5',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
+  container: { flex: 1, backgroundColor: '#FFF9F0' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF9F0' },
+  header: { paddingHorizontal: 24, paddingVertical: 20 },
+  title: { fontSize: 28, fontWeight: '700', color: '#2D5F3F' },
+  subtitle: { fontSize: 16, color: '#6B7F71', marginTop: 4 },
+  scrollView: { flex: 1 },
+  statsGrid: { flexDirection: 'row', gap: 16, paddingHorizontal: 24, marginBottom: 16 },
+  statCard: { flex: 1, backgroundColor: '#FFF', padding: 20, borderRadius: 16, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#E0E9E3' },
+  statValue: { fontSize: 24, fontWeight: '700', color: '#2D5F3F' },
+  statLabel: { fontSize: 12, color: '#6B7F71' },
+  chartCard: { backgroundColor: '#FFF', marginHorizontal: 24, marginBottom: 24, padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#E0E9E3' },
+  chartTitle: { fontSize: 18, fontWeight: '600', color: '#2D5F3F', marginBottom: 16 },
+  chartContainer: { alignItems: 'center', marginVertical: 16 },
+  centerLabel: { alignItems: 'center' },
+  centerLabelValue: { fontSize: 20, fontWeight: '700', color: '#2D5F3F' },
+  centerLabelText: { fontSize: 12, color: '#6B7F71' },
+  legend: { gap: 8, marginTop: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  legendColor: { width: 16, height: 16, borderRadius: 4 },
+  legendText: { fontSize: 14, color: '#6B7F71' },
+  barChartContainer: { alignItems: 'center' },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, gap: 16 },
+  emptyText: { fontSize: 18, fontWeight: '600', color: '#6B7F71' },
+  emptySubtext: { fontSize: 14, color: '#B0BDB5', textAlign: 'center', paddingHorizontal: 32 },
 });

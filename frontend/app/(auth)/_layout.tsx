@@ -1,13 +1,2 @@
-import React from 'react';
-import { Stack } from 'expo-router';
-
-export default function AuthLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="login" />
-      <Stack.Screen name="register" />
-      <Stack.Screen name="register-details" />
-      <Stack.Screen name="demo" />
-    </Stack>
-  );
-}
+// This file is no longer used. Navigation is handled in App.tsx
+export default function AuthLayout() { return null; }

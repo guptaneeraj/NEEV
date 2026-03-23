@@ -1,23 +1,37 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from database import Base
 
 class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
-    stage = Column(String, nullable=False)  # 'pregnancy' or 'child'
-    relationship_type = Column(String, nullable=True)  # Relationship to child
-    preferred_activity_time = Column(String, nullable=True)  # Morning/Afternoon/Evening/Custom
-    active_child_id = Column(Integer, nullable=True)  # Currently active child for multi-child users
-    created_at = Column(DateTime, default=datetime.utcnow)
+    email = Column(String, unique=True, index=True, nullable=True)
+    phone_number = Column(String, unique=True, index=True, nullable=True)
+    hashed_password = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
+    role = Column(String, default="user")
+    stage = Column(String, default="pregnancy")
+    relationship_type = Column(String, nullable=True)
+    onboarding_complete = Column(Boolean, default=False)
+    preferred_plan_type = Column(String, nullable=True) # 20_min_plan, 40_min_plan, 60_min_plan
+    preferred_time_of_day = Column(String, nullable=True) # morning, afternoon, night
+    preferred_activity_time = Column(String, nullable=True) # 08:00 AM
+    profile_image = Column(String, nullable=True) # Stores URL/path to image
+    active_child_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # New Fields
+    otp = Column(String, nullable=True)
+    otp_expiry = Column(DateTime, nullable=True)
+    is_verified = Column(Boolean, default=False)
     
     children = relationship("Child", back_populates="user", cascade="all, delete-orphan")
-    pregnancy_info = relationship("PregnancyInfo", back_populates="user", cascade="all, delete-orphan")
+    pregnancy_info = relationship("PregnancyInfo", back_populates="user", uselist=False, cascade="all, delete-orphan")
     task_completions = relationship("TaskCompletion", back_populates="user", cascade="all, delete-orphan")
+    chat_history = relationship("AIQuery", back_populates="user", cascade="all, delete-orphan")
+    milestones = relationship("Milestone", back_populates="user", cascade="all, delete-orphan")
 
 class Child(Base):
     __tablename__ = "children"
@@ -26,11 +40,13 @@ class Child(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     dob = Column(DateTime, nullable=False)
-    sex = Column(String, nullable=True)  # Male/Female/Prefer not to say
-    diet_preference = Column(String, nullable=True)  # Vegetarian/Eggetarian/Non-vegetarian
-    created_at = Column(DateTime, default=datetime.utcnow)
+    sex = Column(String, nullable=True)
+    profile_image = Column(String, nullable=True) # Stores URL/path
+    diet_preference = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     user = relationship("User", back_populates="children")
+    milestones = relationship("Milestone", back_populates="child", cascade="all, delete-orphan")
 
 class PregnancyInfo(Base):
     __tablename__ = "pregnancy_info"
@@ -41,107 +57,77 @@ class PregnancyInfo(Base):
     is_user_pregnant = Column(Boolean, default=True)
     relationship_to_pregnant = Column(String, nullable=True)
     current_week = Column(Integer, nullable=False)
-    diet_preference = Column(String, nullable=True)  # Vegetarian/Eggetarian/Non-vegetarian
-    created_at = Column(DateTime, default=datetime.utcnow)
+    due_date = Column(DateTime, nullable=True)
+    profile_image = Column(String, nullable=True) # Stores URL/path
+    diet_preference = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     user = relationship("User", back_populates="pregnancy_info")
 
-class ScheduleTemplate(Base):
-    __tablename__ = "schedule_templates"
-    
+class MasterActivity(Base):
+    __tablename__ = "master_activities"
     id = Column(Integer, primary_key=True, index=True)
-    stage_type = Column(String, nullable=False)  # 'pregnancy_week' or 'child_age_months'
-    stage_value = Column(Integer, nullable=False)  # week number or age in months
-    tasks_json = Column(JSON, nullable=False)  # Array of task objects
-    created_at = Column(DateTime, default=datetime.utcnow)
+    activity = Column(String, nullable=False)
+    domain = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    tools = Column(Text, nullable=True)
+    session_min = Column(Integer, nullable=True)
+    session_max = Column(Integer, nullable=True)
+
+class PlanTemplate(Base):
+    __tablename__ = "plan_templates"
+    id = Column(Integer, primary_key=True, index=True)
+    plan_type = Column(String, nullable=False)
+    week = Column(Integer, nullable=False)
+    domain = Column(String, nullable=True)
+    activities_json = Column(JSON, nullable=False)
 
 class TaskCompletion(Base):
     __tablename__ = "task_completions"
-    
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    task_id = Column(String, nullable=False)  # Reference to task in template
-    completed_at = Column(DateTime, default=datetime.utcnow)
-    template_id = Column(Integer, nullable=True)
-    
+    activity_name = Column(String, nullable=False)
+    week = Column(Integer, nullable=False)
+    completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     user = relationship("User", back_populates="task_completions")
-
-class TaskNote(Base):
-    __tablename__ = "task_notes"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    task_id = Column(String, nullable=False)
-    note = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class CustomTask(Base):
-    __tablename__ = "custom_tasks"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    title = Column(String, nullable=False)
-    frequency = Column(String, nullable=True)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class HealthRecord(Base):
-    __tablename__ = "health_records"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    child_id = Column(Integer, nullable=True)
-    record_type = Column(String, nullable=False)  # weight, height, appointment, vaccination
-    value = Column(String, nullable=True)
-    date = Column(DateTime, nullable=False)
-    notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class EducationalContent(Base):
-    __tablename__ = "educational_content"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    stage_type = Column(String, nullable=False)  # pregnancy_week or child_age_months
-    stage_value = Column(Integer, nullable=False)
-    title = Column(String, nullable=False)
-    content = Column(Text, nullable=False)
-    category = Column(String, nullable=True)  # tips, nutrition, milestone
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class MoodLog(Base):
-    __tablename__ = "mood_logs"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    mood = Column(String, nullable=False)  # happy, sad, anxious, tired, etc.
-    notes = Column(Text, nullable=True)
-    date = Column(DateTime, default=datetime.utcnow)
-
-class SleepLog(Base):
-    __tablename__ = "sleep_logs"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    child_id = Column(Integer, nullable=True)
-    sleep_start = Column(DateTime, nullable=False)
-    sleep_end = Column(DateTime, nullable=False)
-    quality = Column(String, nullable=True)
-    notes = Column(Text, nullable=True)
 
 class Milestone(Base):
     __tablename__ = "milestones"
-    
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    milestone_type = Column(String, nullable=False)  # streak, completion_25, completion_50, etc.
-    achieved_at = Column(DateTime, default=datetime.utcnow)
-    value = Column(Integer, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    child_id = Column(Integer, ForeignKey("children.id"), nullable=True)
+    title = Column(String, nullable=False)
+    achieved_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    notes = Column(Text, nullable=True)
+    age_months = Column(Integer, nullable=True)
+    
+    user = relationship("User", back_populates="milestones")
+    child = relationship("Child", back_populates="milestones")
 
 class AIQuery(Base):
     __tablename__ = "ai_queries"
-    
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     query = Column(Text, nullable=False)
     response = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    user = relationship("User", back_populates="chat_history")
+
+class MoodLog(Base):
+    __tablename__ = "mood_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    mood = Column(String, nullable=False)
+    notes = Column(Text, nullable=True)
+    date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class HealthRecord(Base):
+    __tablename__ = "health_records"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    child_id = Column(Integer, nullable=True)
+    record_type = Column(String, nullable=False)
+    value = Column(String, nullable=True)
+    unit = Column(String, nullable=True)
+    date = Column(DateTime, nullable=False)
+    notes = Column(Text, nullable=True)

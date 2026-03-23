@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = process.env.BACKEND_URL || 'https://api.neevios.com';
 
 const DIET_OPTIONS = ['Vegetarian', 'Eggetarian', 'Non-vegetarian'];
 const SEX_OPTIONS = ['Male', 'Female', 'Prefer not to say'];
 
 export default function AddChild() {
-  const router = useRouter();
+  const navigation = useNavigation<any>();
   const { token, fetchProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
@@ -35,7 +35,7 @@ export default function AddChild() {
       
       await fetchProfile();
       Alert.alert('Success', `${name} has been added successfully!`);
-      router.back();
+      navigation.goBack();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to add child');
     } finally {
@@ -48,7 +48,7 @@ export default function AddChild() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color="#2D5F3F" />
             </TouchableOpacity>
             <Text style={styles.title}>Add Another Child</Text>

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = process.env.BACKEND_URL || 'https://api.neevios.com';
 
 export default function Demo() {
-  const router = useRouter();
+  const navigation = useNavigation<any>();
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function Demo() {
         'You have used all 3 demo queries. Please register to continue.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Register', onPress: () => router.push('/(auth)/register') },
+          { text: 'Register', onPress: () => navigation.navigate('Register') },
         ]
       );
       return;
@@ -59,7 +59,7 @@ export default function Demo() {
           Alert.alert(
             'Demo Limit Reached',
             'Register now to continue using NEEV!',
-            [{ text: 'Register', onPress: () => router.push('/(auth)/register') }]
+            [{ text: 'Register', onPress: () => navigation.navigate('Register') }]
           );
         }, 1000);
       }
@@ -73,7 +73,7 @@ export default function Demo() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#2D5F3F" />
         </TouchableOpacity>
 
@@ -120,7 +120,7 @@ export default function Demo() {
 
         <TouchableOpacity
           style={styles.registerPrompt}
-          onPress={() => router.push('/(auth)/register')}
+          onPress={() => navigation.navigate('Register')}
         >
           <Text style={styles.registerPromptText}>
             Want unlimited access? Register now!
@@ -132,99 +132,22 @@ export default function Demo() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF9F0',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-    gap: 12,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#2D5F3F',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7F71',
-    textAlign: 'center',
-  },
-  form: {
-    gap: 20,
-  },
-  inputContainer: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2D5F3F',
-  },
-  textArea: {
-    backgroundColor: '#FFF',
-    borderWidth: 1.5,
-    borderColor: '#E0E9E3',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#2D5F3F',
-    minHeight: 100,
-  },
-  askButton: {
-    backgroundColor: '#A8D5BA',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  askButtonDisabled: {
-    opacity: 0.6,
-  },
-  askButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2D5F3F',
-  },
-  responseContainer: {
-    backgroundColor: '#F0F8F4',
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-  },
-  responseLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2D5F3F',
-  },
-  responseText: {
-    fontSize: 15,
-    color: '#5A6B5E',
-    lineHeight: 22,
-  },
-  registerPrompt: {
-    backgroundColor: '#A8D5BA',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 24,
-    marginBottom: 24,
-  },
-  registerPromptText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2D5F3F',
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#FFF9F0' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16 },
+  backButton: { width: 44, height: 44, justifyContent: 'center', marginBottom: 16 },
+  header: { alignItems: 'center', marginBottom: 32, gap: 12 },
+  title: { fontSize: 28, fontWeight: '700', color: '#2D5F3F' },
+  subtitle: { fontSize: 16, color: '#6B7F71', textAlign: 'center' },
+  form: { gap: 20 },
+  inputContainer: { gap: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: '#2D5F3F' },
+  textArea: { backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#E0E9E3', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: '#2D5F3F', minHeight: 100 },
+  askButton: { backgroundColor: '#A8D5BA', paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
+  askButtonDisabled: { opacity: 0.6 },
+  askButtonText: { fontSize: 18, fontWeight: '600', color: '#2D5F3F' },
+  responseContainer: { backgroundColor: '#F0F8F4', borderRadius: 12, padding: 16, gap: 8 },
+  responseLabel: { fontSize: 14, fontWeight: '600', color: '#2D5F3F' },
+  responseText: { fontSize: 15, color: '#5A6B5E', lineHeight: 22 },
+  registerPrompt: { backgroundColor: '#A8D5BA', padding: 16, borderRadius: 12, marginTop: 24, marginBottom: 24 },
+  registerPromptText: { fontSize: 16, fontWeight: '600', color: '#2D5F3F', textAlign: 'center' },
 });
