@@ -16,3 +16,4 @@ build/
 # OS
 .DS_Store
 Thumbs.dbfrontend/android/app/build/outputs/apk/debug/app-debug.apk
+frontend/android/app/build/outputs/apk/debug/app-debug.apk

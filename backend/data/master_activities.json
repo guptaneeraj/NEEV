@@ -1,0 +1,1892 @@
+[
+  {
+    "id": "1",
+    "Activity": "Tummy Time",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Tummy Time' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "2",
+    "Activity": "Rolling Reach",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Rolling Reach' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "3",
+    "Activity": "Supported Sitting Play",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Supported Sitting Play' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "4",
+    "Activity": "Crawling Toy Chase",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Crawling Toy Chase' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "5",
+    "Activity": "Furniture Cruising",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Furniture Cruising' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "6",
+    "Activity": "Push Walker Practice",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Push Walker Practice' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "7",
+    "Activity": "Ball Kick Game",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Ball Kick Game' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "8",
+    "Activity": "Balance Line Walk",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Balance Line Walk' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "9",
+    "Activity": "Cushion Climb",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Cushion Climb' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "10",
+    "Activity": "Jump and Land",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Jump and Land' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "11",
+    "Activity": "Stair Crawling",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Stair Crawling' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "12",
+    "Activity": "Tunnel Crawl",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Tunnel Crawl' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "13",
+    "Activity": "Dance Movement",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Dance Movement' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "14",
+    "Activity": "Ball Throw",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Ball Throw' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "15",
+    "Activity": "Obstacle Walk",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Obstacle Walk' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "16",
+    "Activity": "Animal Walk Game",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Animal Walk Game' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "17",
+    "Activity": "Hop Like Bunny",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Hop Like Bunny' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "18",
+    "Activity": "Marching Game",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Marching Game' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "19",
+    "Activity": "Kick Rolling Ball",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Kick Rolling Ball' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "20",
+    "Activity": "Follow the Leader Walk",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Follow the Leader Walk' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "21",
+    "Activity": "Pillow Stepping Path",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Pillow Stepping Path' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "22",
+    "Activity": "Run and Stop Game",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Run and Stop Game' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "23",
+    "Activity": "Toy Push Across Floor",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Toy Push Across Floor' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "24",
+    "Activity": "Step Over Objects",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Step Over Objects' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "25",
+    "Activity": "Chase the Balloon",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Chase the Balloon' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "26",
+    "Activity": "Bubble Stomp",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Bubble Stomp' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "27",
+    "Activity": "Mini Hurdle Walk",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Mini Hurdle Walk' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "28",
+    "Activity": "Tiptoe Walk",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Tiptoe Walk' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "29",
+    "Activity": "Backward Walking",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Backward Walking' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "30",
+    "Activity": "Ball Dribble Push",
+    "Domain": "Gross Motor",
+    "Description": "Parent performs the 'Ball Dribble Push' activity with the child focusing on gross motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "31",
+    "Activity": "Rattle Grip",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Rattle Grip' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "32",
+    "Activity": "Block Stacking",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Block Stacking' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "33",
+    "Activity": "Cup Drop Game",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Cup Drop Game' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "34",
+    "Activity": "Spoon Transfer",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Spoon Transfer' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "35",
+    "Activity": "Large Bead Threading",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Large Bead Threading' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "36",
+    "Activity": "Sticker Peeling",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Sticker Peeling' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "37",
+    "Activity": "Playdough Squeeze",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Playdough Squeeze' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "38",
+    "Activity": "Crayon Scribbling",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Crayon Scribbling' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "39",
+    "Activity": "Button Drop Jar",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Button Drop Jar' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "40",
+    "Activity": "Paper Tear Play",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Paper Tear Play' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "41",
+    "Activity": "Cloth Peg Pinch",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Cloth Peg Pinch' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "42",
+    "Activity": "Puzzle Placement",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Puzzle Placement' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "43",
+    "Activity": "Finger Painting",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Finger Painting' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "44",
+    "Activity": "Coin Slot Game",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Coin Slot Game' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "45",
+    "Activity": "Shape Tracing",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Shape Tracing' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "46",
+    "Activity": "Pipe Cleaner Threading",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Pipe Cleaner Threading' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "47",
+    "Activity": "Sorting Small Objects",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Sorting Small Objects' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "48",
+    "Activity": "Stacking Cups",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Stacking Cups' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "49",
+    "Activity": "Tape Pull Game",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Tape Pull Game' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "50",
+    "Activity": "Lid Open Close",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Lid Open Close' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "51",
+    "Activity": "Pom Pom Pick Up",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Pom Pom Pick Up' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "52",
+    "Activity": "Velcro Pull Game",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Velcro Pull Game' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "53",
+    "Activity": "Rubber Band Stretch Board",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Rubber Band Stretch Board' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "54",
+    "Activity": "Peg Board Insert",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Peg Board Insert' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "55",
+    "Activity": "Sponge Squeeze Water",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Sponge Squeeze Water' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "56",
+    "Activity": "Button Push Toy",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Button Push Toy' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "57",
+    "Activity": "Flip Book Pages",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Flip Book Pages' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "58",
+    "Activity": "Ring Stack Toy",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Ring Stack Toy' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "59",
+    "Activity": "Paper Crumple Game",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Paper Crumple Game' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "60",
+    "Activity": "Toy Screw Turn",
+    "Domain": "Fine Motor",
+    "Description": "Parent performs the 'Toy Screw Turn' activity with the child focusing on fine motor development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "61",
+    "Activity": "Face Talking",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Face Talking' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "62",
+    "Activity": "Sound Imitation",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Sound Imitation' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "63",
+    "Activity": "Object Naming",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Object Naming' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "64",
+    "Activity": "Animal Sound Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Animal Sound Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "65",
+    "Activity": "Picture Book Talk",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Picture Book Talk' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "66",
+    "Activity": "Two Word Prompt",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Two Word Prompt' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "67",
+    "Activity": "Toy Phone Conversation",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Toy Phone Conversation' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "68",
+    "Activity": "Song Repetition",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Song Repetition' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "69",
+    "Activity": "Body Part Naming",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Body Part Naming' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "70",
+    "Activity": "Action Word Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Action Word Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "71",
+    "Activity": "Question Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Question Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "72",
+    "Activity": "Rhyming Sounds",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Rhyming Sounds' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "73",
+    "Activity": "Story Retelling",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Story Retelling' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "74",
+    "Activity": "Emotion Naming",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Emotion Naming' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "75",
+    "Activity": "Object Request Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Object Request Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "76",
+    "Activity": "Name That Toy",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Name That Toy' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "77",
+    "Activity": "Echo Word Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Echo Word Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "78",
+    "Activity": "Nursery Rhyme Actions",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Nursery Rhyme Actions' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "79",
+    "Activity": "Simple Choice Question",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Simple Choice Question' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "80",
+    "Activity": "Picture Pointing",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Picture Pointing' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "81",
+    "Activity": "Describe The Toy",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Describe The Toy' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "82",
+    "Activity": "Guess The Sound",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Guess The Sound' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "83",
+    "Activity": "Who Is That Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Who Is That Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "84",
+    "Activity": "Where Is The Toy",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Where Is The Toy' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "85",
+    "Activity": "Repeat After Me",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Repeat After Me' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "86",
+    "Activity": "Sing and Pause Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Sing and Pause Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "87",
+    "Activity": "Describe Daily Routine",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Describe Daily Routine' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "88",
+    "Activity": "Sound Search Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Sound Search Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "89",
+    "Activity": "Word Expansion Game",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Word Expansion Game' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "90",
+    "Activity": "Talking Mirror",
+    "Domain": "Speech & Language",
+    "Description": "Parent performs the 'Talking Mirror' activity with the child focusing on speech & language development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "91",
+    "Activity": "High Contrast Cards",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'High Contrast Cards' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "92",
+    "Activity": "Peekaboo",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Peekaboo' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "93",
+    "Activity": "Hidden Toy Search",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Hidden Toy Search' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "94",
+    "Activity": "Shape Sorting",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Shape Sorting' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "95",
+    "Activity": "Color Sorting",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Color Sorting' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "96",
+    "Activity": "Simple Puzzle",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Simple Puzzle' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "97",
+    "Activity": "Memory Match",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Memory Match' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "98",
+    "Activity": "Stack Order Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Stack Order Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "99",
+    "Activity": "Cause Effect Toy",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Cause Effect Toy' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "100",
+    "Activity": "Light Switch Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Light Switch Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "101",
+    "Activity": "Sorting Basket",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Sorting Basket' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "102",
+    "Activity": "Pattern Copy",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Pattern Copy' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "103",
+    "Activity": "Counting Objects",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Counting Objects' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "104",
+    "Activity": "Matching Pictures",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Matching Pictures' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "105",
+    "Activity": "Treasure Hunt",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Treasure Hunt' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "106",
+    "Activity": "Find The Red Toy",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Find The Red Toy' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "107",
+    "Activity": "Stack And Knock Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Stack And Knock Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "108",
+    "Activity": "Object Category Sort",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Object Category Sort' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "109",
+    "Activity": "Build Tower Challenge",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Build Tower Challenge' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "110",
+    "Activity": "What Is Missing Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'What Is Missing Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "111",
+    "Activity": "Shadow Matching",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Shadow Matching' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "112",
+    "Activity": "Container Fill Empty",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Container Fill Empty' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "113",
+    "Activity": "Which Is Bigger Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Which Is Bigger Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "114",
+    "Activity": "Toy Sequence Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Toy Sequence Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "115",
+    "Activity": "Cup Hide Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Cup Hide Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "116",
+    "Activity": "Pattern Clap Game",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Pattern Clap Game' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "117",
+    "Activity": "Sound Direction Guess",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Sound Direction Guess' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "118",
+    "Activity": "Follow Two Step Task",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Follow Two Step Task' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "119",
+    "Activity": "Find The Pair",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Find The Pair' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "120",
+    "Activity": "Simple Maze Follow",
+    "Domain": "Cognitive",
+    "Description": "Parent performs the 'Simple Maze Follow' activity with the child focusing on cognitive development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "121",
+    "Activity": "Mirror Smile",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Mirror Smile' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "122",
+    "Activity": "Clap Together",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Clap Together' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "123",
+    "Activity": "Ball Turn Taking",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Ball Turn Taking' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "124",
+    "Activity": "Pretend Feeding Doll",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Pretend Feeding Doll' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "125",
+    "Activity": "Toy Sharing",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Toy Sharing' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "126",
+    "Activity": "Group Song Time",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Group Song Time' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "127",
+    "Activity": "Emotion Face Game",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Emotion Face Game' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "128",
+    "Activity": "Goodbye Wave",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Goodbye Wave' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "129",
+    "Activity": "Hug Game",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Hug Game' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "130",
+    "Activity": "Name Calling Response",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Name Calling Response' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "131",
+    "Activity": "Pretend Cooking",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Pretend Cooking' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "132",
+    "Activity": "Dress Up Play",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Dress Up Play' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "133",
+    "Activity": "Tickle Game",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Tickle Game' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "134",
+    "Activity": "Greeting Practice",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Greeting Practice' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "135",
+    "Activity": "Emotion Story Talk",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Emotion Story Talk' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "136",
+    "Activity": "Thank You Practice",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Thank You Practice' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "137",
+    "Activity": "High Five Game",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'High Five Game' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "138",
+    "Activity": "Toy Give And Take",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Toy Give And Take' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "139",
+    "Activity": "Family Photo Talk",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Family Photo Talk' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "140",
+    "Activity": "Care For Teddy",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Care For Teddy' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "141",
+    "Activity": "Wave Hello Game",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Wave Hello Game' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "142",
+    "Activity": "Happy Dance Together",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Happy Dance Together' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "143",
+    "Activity": "Comfort Toy Time",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Comfort Toy Time' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "144",
+    "Activity": "Laugh Together Game",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Laugh Together Game' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "145",
+    "Activity": "Help Carry Toy",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Help Carry Toy' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "146",
+    "Activity": "Role Play Shopping",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Role Play Shopping' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "147",
+    "Activity": "Pretend Doctor Visit",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Pretend Doctor Visit' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "148",
+    "Activity": "Sharing Snack Game",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Sharing Snack Game' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "149",
+    "Activity": "Friend Doll Play",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Friend Doll Play' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "150",
+    "Activity": "Smile Exchange",
+    "Domain": "Social & Emotional",
+    "Description": "Parent performs the 'Smile Exchange' activity with the child focusing on social & emotional development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "151",
+    "Activity": "Baby Massage",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Baby Massage' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "152",
+    "Activity": "Texture Basket",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Texture Basket' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "153",
+    "Activity": "Water Splash Play",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Water Splash Play' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "154",
+    "Activity": "Rice Bin Dig",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Rice Bin Dig' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "155",
+    "Activity": "Sand Play",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Sand Play' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "156",
+    "Activity": "Playdough Press",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Playdough Press' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "157",
+    "Activity": "Bubble Catch",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Bubble Catch' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "158",
+    "Activity": "Feather Touch",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Feather Touch' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "159",
+    "Activity": "Ice Touch",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Ice Touch' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "160",
+    "Activity": "Water Pouring",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Water Pouring' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "161",
+    "Activity": "Texture Walk",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Texture Walk' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "162",
+    "Activity": "Sound Shake",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Sound Shake' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "163",
+    "Activity": "Light Shadow Play",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Light Shadow Play' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "164",
+    "Activity": "Scent Smell Game",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Scent Smell Game' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "165",
+    "Activity": "Wind Fan Play",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Wind Fan Play' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "166",
+    "Activity": "Warm Water Dip",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Warm Water Dip' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "167",
+    "Activity": "Cold Spoon Touch",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Cold Spoon Touch' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "168",
+    "Activity": "Foam Play",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Foam Play' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "169",
+    "Activity": "Finger Sand Drawing",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Finger Sand Drawing' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "170",
+    "Activity": "Leaf Touch Game",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Leaf Touch Game' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "171",
+    "Activity": "Grass Walk",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Grass Walk' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "172",
+    "Activity": "Bubble Pop",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Bubble Pop' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "173",
+    "Activity": "Fabric Rub Game",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Fabric Rub Game' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "174",
+    "Activity": "Water Drip Watch",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Water Drip Watch' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "175",
+    "Activity": "Rolling Ball Feel",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Rolling Ball Feel' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "176",
+    "Activity": "Vibration Toy Touch",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Vibration Toy Touch' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "177",
+    "Activity": "Texture Path Crawl",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Texture Path Crawl' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "178",
+    "Activity": "Corn Flour Play",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Corn Flour Play' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "179",
+    "Activity": "Bottle Sound Shake",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Bottle Sound Shake' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "180",
+    "Activity": "Soft Brush Touch",
+    "Domain": "Sensory",
+    "Description": "Parent performs the 'Soft Brush Touch' activity with the child focusing on sensory development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "181",
+    "Activity": "Finger Feeding",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Finger Feeding' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "182",
+    "Activity": "Cup Drinking",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Cup Drinking' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "183",
+    "Activity": "Toy Cleanup",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Toy Cleanup' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "184",
+    "Activity": "Sock Removal",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Sock Removal' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "185",
+    "Activity": "Hand Washing",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Hand Washing' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "186",
+    "Activity": "Brushing Teeth",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Brushing Teeth' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "187",
+    "Activity": "Spoon Eating",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Spoon Eating' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "188",
+    "Activity": "Hat On Off",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Hat On Off' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "189",
+    "Activity": "Simple Dressing",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Simple Dressing' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "190",
+    "Activity": "Towel Drying",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Towel Drying' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "191",
+    "Activity": "Toy Shelf Return",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Toy Shelf Return' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "192",
+    "Activity": "Snack Plate Carry",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Snack Plate Carry' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "193",
+    "Activity": "Water Bottle Drink",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Water Bottle Drink' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "194",
+    "Activity": "Chair Sitting",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Chair Sitting' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "195",
+    "Activity": "Nap Blanket Fold",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Nap Blanket Fold' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "196",
+    "Activity": "Shoe Placement",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Shoe Placement' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "197",
+    "Activity": "Laundry Basket Help",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Laundry Basket Help' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "198",
+    "Activity": "Put Spoon In Sink",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Put Spoon In Sink' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "199",
+    "Activity": "Throw Trash In Bin",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Throw Trash In Bin' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "200",
+    "Activity": "Carry Small Bag",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Carry Small Bag' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "201",
+    "Activity": "Place Book On Shelf",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Place Book On Shelf' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "202",
+    "Activity": "Wipe Table Try",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Wipe Table Try' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "203",
+    "Activity": "Put Toys In Box",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Put Toys In Box' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "204",
+    "Activity": "Close Drawer Help",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Close Drawer Help' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "205",
+    "Activity": "Put Cup On Table",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Put Cup On Table' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "206",
+    "Activity": "Pick Up Cloth",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Pick Up Cloth' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "207",
+    "Activity": "Open Lunch Box",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Open Lunch Box' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "208",
+    "Activity": "Hold Napkin",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Hold Napkin' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "209",
+    "Activity": "Place Shoes Near Door",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Place Shoes Near Door' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  },
+  {
+    "id": "210",
+    "Activity": "Fold Small Cloth",
+    "Domain": "Self Help",
+    "Description": "Parent performs the 'Fold Small Cloth' activity with the child focusing on self help development.",
+    "Tools": "Common household toys or objects",
+    "Session_Min": "5",
+    "Session_Max": "10"
+  }
+]

@@ -26,6 +26,7 @@ interface ChildProfile {
   mood_logs?: any[];
   health_records?: any[];
   task_completions?: string[];
+  check_ins?: any[];
 }
 
 interface Task {
@@ -51,8 +52,9 @@ interface AIState {
   error: string | null;
 
   setSelectedChildId: (userId: string, childId: string, isAnother?: boolean) => Promise<void>;
-  fetchChildren: (userId: string) => Promise<void>;
+  fetchChildren: (userId: string, forceRefresh?: boolean) => Promise<void>;
   fetchGuidance: (userId: string, profile: ChildProfile) => Promise<void>;
+  streamGuidance: (userId: string, profile: ChildProfile, onUpdate: (data: Partial<GuidanceData>) => void) => Promise<void>;
   processChat: (userId: string, question: string, profile: ChildProfile, onToken: (token: string) => void) => Promise<void>;
   getStoredSessionId: (userId: string, childId: string) => Promise<string | null>;
   clearSession: (userId: string, childId: string) => Promise<void>;
@@ -82,7 +84,10 @@ export const useAIStore = create<AIState>((set, get) => ({
     await AsyncStorage.removeItem(key);
   },
 
-  fetchChildren: async (userId) => {
+  fetchChildren: async (userId, forceRefresh = false) => {
+    // Optimization: Don't re-fetch if we already have children unless forced
+    if (get().children.length > 0 && !forceRefresh) return;
+
     try {
       const res = await axios.post(`${AI_API_URL}/children/list`, { user_id: userId });
       set({ children: res.data.children || [] });
@@ -98,14 +103,11 @@ export const useAIStore = create<AIState>((set, get) => ({
       }
     } catch (error) {
       console.error("Error fetching children:", error);
-      set({ error: "Could not connect to AI. Check your connection." });
     }
   },
 
   fetchGuidance: async (userId, profile) => {
-    const childId = get().selectedChildId;
-    if (!childId) return;
-
+    const childId = get().selectedChildId || userId;
     const sessionId = await get().getStoredSessionId(userId, childId);
     set({ isLoading: true, error: null });
 
@@ -115,7 +117,6 @@ export const useAIStore = create<AIState>((set, get) => ({
         user_id: userId,
         child_profile: profile
       });
-
       set({ guidanceData: res.data });
     } catch (error: any) {
       console.error("AI Guidance Error:", error);
@@ -128,16 +129,71 @@ export const useAIStore = create<AIState>((set, get) => ({
     }
   },
 
-  processChat: async (userId, question, profile, onToken) => {
-    const childId = get().selectedChildId;
-    if (!childId && question !== 'start') return;
-
-    let sessionId = childId ? await get().getStoredSessionId(userId, childId) : null;
+  streamGuidance: async (userId, profile, onUpdate) => {
+    const childId = get().selectedChildId || userId;
+    let sessionId = await get().getStoredSessionId(userId, childId);
 
     set({ isLoading: true, error: null });
 
     try {
-      const response = await fetch(`${AI_API_URL}/ai/ask`, {
+      const response = await fetch(`${AI_API_URL}/ai/guidance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId || null,
+          user_id: userId,
+          child_profile: profile,
+          stream: true
+        })
+      });
+
+      if (!response.ok) throw new Error("Guidance stream failed");
+
+      const reader = response.body?.getReader();
+      if (!reader) return;
+
+      const decoder = new TextDecoder();
+      let lineBuffer = '';
+      let currentData: Partial<GuidanceData> = {};
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split('\n');
+        lineBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          try {
+            const data = JSON.parse(trimmed);
+            if (data.mode === 'onboarding') {
+              set({ guidanceData: null, isLoading: false });
+              return;
+          }
+          currentData = { ...currentData, ...data };
+          set({ guidanceData: currentData as GuidanceData });
+          onUpdate(data);
+        } catch (e) {}
+      }
+    }
+    } catch (error) {
+      console.error("Stream Guidance Error:", error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  processChat: async (userId, question, profile, onToken) => {
+    const childId = get().selectedChildId || userId;
+    let sessionId = await get().getStoredSessionId(userId, childId);
+
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(`${AI_API_URL}/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,14 +205,14 @@ export const useAIStore = create<AIState>((set, get) => ({
       });
 
       if (!response.ok) {
-        if (response.status === 404 && childId) {
+        if (response.status === 404) {
           await get().clearSession(userId, childId);
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const newSessionId = response.headers.get('X-Session-ID');
-      if (newSessionId && childId) {
+      if (newSessionId) {
         await AsyncStorage.setItem(`neev_session_${userId}_${childId}`, newSessionId);
       }
 
@@ -181,9 +237,7 @@ export const useAIStore = create<AIState>((set, get) => ({
               fullText += text;
               onToken(text);
             }
-          } catch (e) {
-            // Partial JSON
-          }
+          } catch (e) {}
         }
       }
 

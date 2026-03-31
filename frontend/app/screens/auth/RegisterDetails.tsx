@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Dimensions } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Theme } from '../../../constants/Theme';
+
+const { width, height } = Dimensions.get('window');
 
 const API_URL = "https://api.neevios.com";
 
@@ -33,13 +36,9 @@ export default function RegisterDetails() {
   const [loading, setLoading] = useState(false);
   const [subStep, setSubStep] = useState(1); // 1: Diet, 2: Activity Plan
 
-  // Onboarding Data from previous screen
   const { relationship, stage, pregnancyWeek, childName, childDOB, childSex } = route.params || {};
 
-  // Step 5: Diet
   const [diet, setDiet] = useState('');
-
-  // Step 6: Plan
   const [planType, setPlanType] = useState('');
   const [timeOfDay, setTimeOfDay] = useState('');
   const [specificTime, setSpecificTime] = useState('');
@@ -51,7 +50,6 @@ export default function RegisterDetails() {
 
     setLoading(true);
     try {
-      // 1. Update User Profile
       await axios.patch(`${API_URL}/api/user/update`, {
         relationship_type: relationship,
         preferred_plan_type: planType,
@@ -60,7 +58,6 @@ export default function RegisterDetails() {
         stage: stage
       }, { headers: { Authorization: `Bearer ${token}` } });
 
-      // 2. Save Stage Details
       if (stage === 'pregnancy') {
         await axios.post(`${API_URL}/api/user/pregnancy`, {
           pregnant_person_name: 'Self',
@@ -96,9 +93,9 @@ export default function RegisterDetails() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <TouchableOpacity onPress={() => subStep === 2 ? setSubStep(1) : navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#2D5F3F" />
+          <Ionicons name="arrow-back" size={height * 0.03} color={Theme.colors.primary} />
         </TouchableOpacity>
 
         <View style={styles.progress}>
@@ -166,7 +163,7 @@ export default function RegisterDetails() {
             )}
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading || !specificTime}>
-              {loading ? <ActivityIndicator color="#2D5F3F" /> : <Text style={styles.submitBtnTxt}>Complete Profile</Text>}
+              {loading ? <ActivityIndicator color={Theme.colors.primary} /> : <Text style={styles.submitBtnTxt}>Complete Profile</Text>}
             </TouchableOpacity>
           </View>
         )}
@@ -176,29 +173,29 @@ export default function RegisterDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF9F0' },
-  scrollContent: { padding: 24 },
-  backBtn: { marginBottom: 20 },
-  progress: { flexDirection: 'row', gap: 8, marginBottom: 30, justifyContent: 'center' },
-  dot: { width: 30, height: 6, borderRadius: 3 },
-  dotActive: { backgroundColor: '#A8D5BA' },
-  dotInactive: { backgroundColor: '#E0E9E3' },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#2D5F3F', marginBottom: 10 },
-  subtitle: { fontSize: 16, color: '#6B7F71', marginBottom: 30 },
-  sectionLabel: { fontSize: 12, fontWeight: 'bold', color: '#2D5F3F', marginBottom: 15, marginTop: 10, letterSpacing: 1 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
-  card: { width: '30%', aspectRatio: 1, backgroundColor: '#FFF', borderRadius: 15, padding: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E0E9E3' },
-  cardActive: { borderColor: '#A8D5BA', backgroundColor: '#F0F8F4' },
-  cardIcon: { fontSize: 24, marginBottom: 5 },
-  cardLabel: { fontSize: 11, textAlign: 'center', color: '#6B7F71', fontWeight: '600' },
-  cardLabelActive: { color: '#2D5F3F' },
-  timeSlot: { paddingHorizontal: 15, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E0E9E3', marginBottom: 5 },
-  timeSlotActive: { borderColor: '#A8D5BA', backgroundColor: '#F0F8F4' },
-  timeSlotTxt: { color: '#6B7F71', fontWeight: 'bold' },
-  timeSlotTxtActive: { color: '#2D5F3F' },
-  nextBtn: { backgroundColor: '#A8D5BA', padding: 20, borderRadius: 30, alignItems: 'center', marginTop: 20 },
-  nextBtnTxt: { fontSize: 18, fontWeight: 'bold', color: '#2D5F3F' },
-  submitBtn: { backgroundColor: '#A8D5BA', padding: 20, borderRadius: 30, alignItems: 'center', marginTop: 20 },
-  submitBtnTxt: { fontSize: 18, fontWeight: 'bold', color: '#2D5F3F' },
+  container: { flex: 1, backgroundColor: Theme.colors.background },
+  scrollContent: { padding: width * 0.06 },
+  backBtn: { marginBottom: height * 0.02 },
+  progress: { flexDirection: 'row', gap: width * 0.02, marginBottom: height * 0.04, justifyContent: 'center' },
+  dot: { width: width * 0.08, height: height * 0.008, borderRadius: 4 },
+  dotActive: { backgroundColor: Theme.colors.secondary },
+  dotInactive: { backgroundColor: Theme.colors.accent },
+  title: { fontSize: height * 0.035, fontWeight: '700', color: Theme.colors.primary, marginBottom: height * 0.01 },
+  subtitle: { fontSize: height * 0.018, color: Theme.colors.textLight, marginBottom: height * 0.04, fontWeight: '600' },
+  sectionLabel: { fontSize: height * 0.014, fontWeight: '800', color: Theme.colors.primary, marginBottom: height * 0.015, marginTop: height * 0.015, letterSpacing: 1 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: width * 0.03, marginBottom: height * 0.02 },
+  card: { width: width * 0.27, aspectRatio: 1, backgroundColor: Theme.colors.white, borderRadius: 15, padding: height * 0.01, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.accent },
+  cardActive: { borderColor: Theme.colors.secondary, backgroundColor: Theme.colors.softGreen },
+  cardIcon: { fontSize: height * 0.03, marginBottom: 5 },
+  cardLabel: { fontSize: height * 0.012, textAlign: 'center', color: Theme.colors.textLight, fontWeight: '700' },
+  cardLabelActive: { color: Theme.colors.primary },
+  timeSlot: { paddingHorizontal: width * 0.04, paddingVertical: height * 0.015, borderRadius: 12, backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, marginBottom: 5 },
+  timeSlotActive: { borderColor: Theme.colors.secondary, backgroundColor: Theme.colors.softGreen },
+  timeSlotTxt: { color: Theme.colors.textLight, fontWeight: '700', fontSize: height * 0.016 },
+  timeSlotTxtActive: { color: Theme.colors.primary },
+  nextBtn: { backgroundColor: Theme.colors.secondary, padding: height * 0.022, borderRadius: height * 0.035, alignItems: 'center', marginTop: height * 0.02, borderWidth: 1.5, borderColor: Theme.colors.primary },
+  nextBtnTxt: { fontSize: height * 0.02, fontWeight: '900', color: Theme.colors.primary },
+  submitBtn: { backgroundColor: Theme.colors.secondary, padding: height * 0.022, borderRadius: height * 0.035, alignItems: 'center', marginTop: height * 0.02, borderWidth: 1.5, borderColor: Theme.colors.primary },
+  submitBtnTxt: { fontSize: height * 0.02, fontWeight: '900', color: Theme.colors.primary },
   disabled: { opacity: 0.5 }
 });

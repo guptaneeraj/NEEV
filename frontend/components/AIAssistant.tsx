@@ -8,8 +8,8 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { WebView } from 'react-native-webview';
+import { Theme } from '../constants/Theme';
 
-// POINTING TO YOUR EXISTING AI FRONTEND (IIS Port 81)
 const AI_WEB_URL = 'https://ai.neevios.com';
 
 export default function AIAssistant() {
@@ -17,17 +17,15 @@ export default function AIAssistant() {
 
   return (
     <>
-      {/* Floating Chat Bubble */}
       <TouchableOpacity
         style={styles.floatingButton}
         onPress={() => setIsOpen(true)}
         activeOpacity={0.8}
       >
-        <Ionicons name="chatbubbles" size={28} color="#FFF" />
+        <Ionicons name="chatbubbles" size={28} color={Theme.colors.white} />
         <View style={styles.pulseDot} />
       </TouchableOpacity>
 
-      {/* Chat Modal with WebView */}
       <Modal
         visible={isOpen}
         animationType="slide"
@@ -37,7 +35,7 @@ export default function AIAssistant() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => setIsOpen(false)} style={styles.closeButton}>
-              <Ionicons name="close" size={28} color="#2D5F3F" />
+              <Ionicons name="close" size={28} color={Theme.colors.primary} />
             </TouchableOpacity>
           </View>
 
@@ -63,7 +61,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#A8D5BA',
+    backgroundColor: Theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
@@ -72,6 +70,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     zIndex: 9999,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primary,
   },
   pulseDot: {
     position: 'absolute',
@@ -80,21 +80,23 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#2D5F3F',
+    backgroundColor: Theme.colors.primary,
+    borderWidth: 1,
+    borderColor: Theme.colors.white,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: Theme.colors.background,
   },
   header: {
-    height: 50,
+    height: 60,
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E9E3',
-    backgroundColor: '#FFF',
+    borderBottomWidth: 1.5,
+    borderBottomColor: Theme.colors.accent,
+    backgroundColor: Theme.colors.background,
   },
   closeButton: {
     padding: 4,

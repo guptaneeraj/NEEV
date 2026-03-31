@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from database import Base
@@ -32,6 +32,7 @@ class User(Base):
     task_completions = relationship("TaskCompletion", back_populates="user", cascade="all, delete-orphan")
     chat_history = relationship("AIQuery", back_populates="user", cascade="all, delete-orphan")
     milestones = relationship("Milestone", back_populates="user", cascade="all, delete-orphan")
+    check_ins = relationship("CheckIn", back_populates="user", cascade="all, delete-orphan")
 
 class Child(Base):
     __tablename__ = "children"
@@ -63,6 +64,24 @@ class PregnancyInfo(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     user = relationship("User", back_populates="pregnancy_info")
+
+class CheckIn(Base):
+    __tablename__ = "check_ins"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    type = Column(String, nullable=False)  # "morning" or "evening"
+    date = Column(String, nullable=False)  # YYYY-MM-DD
+    sleep_hours = Column(Float, nullable=True)
+    night_wakings = Column(Integer, nullable=True)
+    baby_mood = Column(String, nullable=True)
+    total_feeds = Column(Integer, nullable=True)
+    tummy_time = Column(String, nullable=True)
+    parent_mood = Column(String, nullable=True)
+    new_milestone = Column(String, nullable=True)
+    concerns = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    user = relationship("User", back_populates="check_ins")
 
 class MasterActivity(Base):
     __tablename__ = "master_activities"

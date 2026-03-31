@@ -4,8 +4,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { Theme } from '../../../constants/Theme';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = 'https://api.neevios.com';
 
 const ACTIVITY_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Custom time'];
 const RELATIONSHIP_OPTIONS = ['Mother', 'Father', 'Grandmother', 'Grandfather', 'Guardian', 'Caregiver', 'Other'];
@@ -14,9 +15,9 @@ export default function EditProfile() {
   const navigation = useNavigation<any>();
   const { token, user, fetchProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [relationship, setRelationship] = useState('');
-  const [activityTime, setActivityTime] = useState('');
-  const [pregnancyWeek, setPregnancyWeek] = useState('');
+  const [relationship, setRelationship] = useState(user?.relationship_type || '');
+  const [activityTime, setActivityTime] = useState(user?.preferred_activity_time || '');
+  const [pregnancyWeek, setPregnancyWeek] = useState(user?.pregnancy_info?.current_week?.toString() || '');
 
   useEffect(() => {
     loadProfile();
@@ -27,7 +28,10 @@ export default function EditProfile() {
       const response = await axios.get(`${API_URL}/api/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Set existing values if available
+      const data = response.data;
+      if (data.relationship_type) setRelationship(data.relationship_type);
+      if (data.preferred_activity_time) setActivityTime(data.preferred_activity_time);
+      if (data.pregnancy_info?.current_week) setPregnancyWeek(data.pregnancy_info.current_week.toString());
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -65,7 +69,7 @@ export default function EditProfile() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#2D5F3F" />
+            <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
           </TouchableOpacity>
           <Text style={styles.title}>Edit Profile</Text>
         </View>
@@ -101,7 +105,7 @@ export default function EditProfile() {
           )}
 
           <TouchableOpacity style={[styles.saveButton, loading && styles.saveButtonDisabled]} onPress={handleSave} disabled={loading}>
-            {loading ? <ActivityIndicator color="#2D5F3F" /> : <Text style={styles.saveButtonText}>Save Changes</Text>}
+            {loading ? <ActivityIndicator color={Theme.colors.primary} /> : <Text style={styles.saveButtonText}>Save Changes</Text>}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -110,21 +114,21 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF9F0' },
+  container: { flex: 1, backgroundColor: Theme.colors.background },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   backButton: { width: 44, height: 44, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: '700', color: '#2D5F3F', marginLeft: 8 },
+  title: { fontSize: 24, fontWeight: '700', color: Theme.colors.primary, marginLeft: 8 },
   form: { gap: 24 },
   inputContainer: { gap: 12 },
-  label: { fontSize: 16, fontWeight: '600', color: '#2D5F3F' },
+  label: { fontSize: 16, fontWeight: '700', color: Theme.colors.primary },
   optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  optionCard: { backgroundColor: '#FFF', borderWidth: 2, borderColor: '#E0E9E3', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16 },
-  optionCardActive: { borderColor: '#A8D5BA', backgroundColor: '#F0F8F4' },
-  optionText: { fontSize: 14, color: '#6B7F71' },
-  optionTextActive: { color: '#2D5F3F', fontWeight: '600' },
-  input: { backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#E0E9E3', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: '#2D5F3F' },
-  saveButton: { backgroundColor: '#A8D5BA', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
+  optionCard: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16 },
+  optionCardActive: { borderColor: Theme.colors.secondary, backgroundColor: Theme.colors.softGreen },
+  optionText: { fontSize: 14, color: Theme.colors.textLight, fontWeight: '600' },
+  optionTextActive: { color: Theme.colors.primary, fontWeight: '700' },
+  input: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: Theme.colors.primary },
+  saveButton: { backgroundColor: Theme.colors.secondary, paddingVertical: 16, borderRadius: 25, alignItems: 'center', marginTop: 16, borderWidth: 1.5, borderColor: Theme.colors.primary },
   saveButtonDisabled: { opacity: 0.6 },
-  saveButtonText: { fontSize: 18, fontWeight: '600', color: '#2D5F3F' },
+  saveButtonText: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary },
 });

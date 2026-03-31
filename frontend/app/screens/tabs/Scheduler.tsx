@@ -8,14 +8,20 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { useAIStore } from '../../../store/useAIStore';
+import LoadingLogo from '../../../components/LoadingLogo';
+import Animated, { FadeInUp, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { Theme } from '../../../constants/Theme';
 
-// Use hardcoded host IP for Android emulator
-const API_URL = 'http://10.0.2.2:8001';
+const { height } = Dimensions.get('window');
+const API_URL = 'https://api.neevios.com';
 
 interface Task {
   id: string;
@@ -24,11 +30,18 @@ interface Task {
 }
 
 export default function Scheduler() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const { processChat } = useAIStore();
+
   const [schedule, setSchedule] = useState<any>(null);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationText, setCelebrationText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const loadSchedule = async () => {
     try {
@@ -43,11 +56,10 @@ export default function Scheduler() {
 
       setSchedule(scheduleRes.data);
 
-      // Get today's completed tasks
       const today = new Date().toISOString().split('T')[0];
       const todayCompleted = new Set(
-        completedRes.data
-          .filter((t: any) => t.completed_at.startsWith(today))
+        (completedRes.data || [])
+          .filter((t: any) => t.completed_at && t.completed_at.startsWith(today))
           .map((t: any) => t.task_id)
       );
       setCompletedTasks(todayCompleted);
@@ -70,6 +82,32 @@ export default function Scheduler() {
     loadSchedule();
   };
 
+  const triggerCelebration = async (taskTitle: string) => {
+    setShowCelebration(true);
+    setAiLoading(true);
+    setCelebrationText("");
+
+    try {
+      const question = `We just completed: ${taskTitle}. How did we do and what should we know?`;
+      const profile = {
+        full_name: user?.full_name,
+        stage: user?.stage || 'parenting'
+      };
+
+      await processChat(user?.id.toString() || "", question, profile, (token) => {
+        setCelebrationText(prev => prev + token);
+      });
+
+      setTimeout(() => {
+        setShowCelebration(false);
+      }, 8000);
+    } catch (e) {
+      console.error("Celebration Error:", e);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleTaskToggle = async (task: Task) => {
     const isCompleted = completedTasks.has(task.id);
 
@@ -80,13 +118,13 @@ export default function Scheduler() {
 
     try {
       await axios.post(
-        `${API_URL}/api/tasks/complete`,
-        { task_id: task.id, template_id: schedule.template_id },
+        `${API_URL}/api/tasks/toggle`,
+        { activity_name: task.title, week: schedule.week },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setCompletedTasks(new Set(completedTasks).add(task.id));
-      Alert.alert('Success', 'Task marked as complete!');
+      triggerCelebration(task.title);
     } catch (error) {
       Alert.alert('Error', 'Failed to complete task');
     }
@@ -95,7 +133,7 @@ export default function Scheduler() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#A8D5BA" />
+        <LoadingLogo size={80} />
       </View>
     );
   }
@@ -104,7 +142,7 @@ export default function Scheduler() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#A8D5BA" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.secondary} />}
       >
         {schedule?.tasks && schedule.tasks.length > 0 ? (
           schedule.tasks.map((task: Task, index: number) => {
@@ -118,9 +156,9 @@ export default function Scheduler() {
               >
                 <View style={styles.checkbox}>
                   {isCompleted ? (
-                    <Ionicons name="checkmark-circle" size={28} color="#A8D5BA" />
+                    <Ionicons name="checkmark-circle" size={28} color={Theme.colors.secondary} />
                   ) : (
-                    <Ionicons name="ellipse-outline" size={28} color="#B0BDB5" />
+                    <Ionicons name="ellipse-outline" size={28} color={Theme.colors.accent} />
                   )}
                 </View>
                 <View style={styles.taskContent}>
@@ -134,80 +172,79 @@ export default function Scheduler() {
           })
         ) : (
           <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={64} color="#E0E9E3" />
+            <Ionicons name="calendar-outline" size={64} color={Theme.colors.accent} />
             <Text style={styles.emptyText}>No tasks available</Text>
             <Text style={styles.emptySubtext}>Complete your profile to get personalized tasks</Text>
           </View>
         )}
       </ScrollView>
+
+      {showCelebration && (
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={() => setShowCelebration(false)}
+          />
+          <Animated.View
+            entering={SlideInDown.springify().damping(15)}
+            exiting={SlideOutDown}
+            style={styles.bottomSheet}
+          >
+            <View style={styles.sheetHeader}>
+               <View style={styles.indicator} />
+               <Text style={styles.celebrationTitle}>Great work!</Text>
+               <TouchableOpacity onPress={() => setShowCelebration(false)}>
+                 <Ionicons name="close-circle" size={24} color={Theme.colors.white} />
+               </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.sheetContent}>
+              {aiLoading && !celebrationText ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <LoadingLogo size={50} />
+                </View>
+              ) : (
+                <Text style={styles.celebrationText}>{celebrationText}</Text>
+              )}
+            </ScrollView>
+          </Animated.View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF9F0',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF9F0',
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 10,
-  },
+  container: { flex: 1, backgroundColor: Theme.colors.background },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.colors.background },
+  scrollView: { flex: 1, paddingHorizontal: 24, paddingTop: 10 },
   taskCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
+    backgroundColor: Theme.colors.white,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 12,
     gap: 16,
-    borderWidth: 1,
-    borderColor: '#E0E9E3',
+    borderWidth: 1.5,
+    borderColor: Theme.colors.accent,
+    ...Theme.shadows.soft
   },
-  taskCardCompleted: {
-    backgroundColor: '#F0F8F4',
-  },
-  checkbox: {
-    justifyContent: 'center',
-  },
-  taskContent: {
-    flex: 1,
-    gap: 4,
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2D5F3F',
-  },
-  taskTitleCompleted: {
-    textDecorationLine: 'line-through',
-    color: '#6B7F71',
-  },
-  taskFrequency: {
-    fontSize: 14,
-    color: '#6B7F71',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-    gap: 16,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#6B7F71',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#B0BDB5',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
+  taskCardCompleted: { backgroundColor: Theme.colors.softGreen, borderColor: Theme.colors.secondary },
+  checkbox: { justifyContent: 'center' },
+  taskContent: { flex: 1, gap: 4 },
+  taskTitle: { fontSize: 16, fontWeight: '700', color: Theme.colors.primary },
+  taskTitleCompleted: { textDecorationLine: 'line-through', color: Theme.colors.textLight },
+  taskFrequency: { fontSize: 14, color: Theme.colors.textLight },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, gap: 16 },
+  emptyText: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary },
+  emptySubtext: { fontSize: 14, color: Theme.colors.textLight, textAlign: 'center', paddingHorizontal: 32 },
+  sheetOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', zIndex: 1000 },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)' },
+  bottomSheet: { backgroundColor: Theme.colors.primary, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingBottom: 40, maxHeight: height * 0.5, borderWidth: 1.5, borderColor: Theme.colors.primary },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 20 },
+  indicator: { width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, position: 'absolute', top: 10, left: '50%', marginLeft: -20 },
+  celebrationTitle: { fontSize: 22, fontWeight: '700', color: Theme.colors.white },
+  sheetContent: { paddingHorizontal: 24, maxHeight: 300 },
+  celebrationText: { fontSize: 16, color: Theme.colors.white, lineHeight: 24, paddingBottom: 20 },
 });

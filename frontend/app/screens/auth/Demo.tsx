@@ -4,8 +4,9 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Theme } from '../../../constants/Theme';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = 'https://api.neevios.com';
 
 export default function Demo() {
   const navigation = useNavigation<any>();
@@ -74,11 +75,11 @@ export default function Demo() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#2D5F3F" />
+          <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Ionicons name="chatbubbles" size={48} color="#A8D5BA" />
+          <Ionicons name="chatbubbles" size={48} color={Theme.colors.secondary} />
           <Text style={styles.title}>Demo Mode</Text>
           <Text style={styles.subtitle}>Try our AI assistant (3 queries left: {queriesLeft})</Text>
         </View>
@@ -104,7 +105,7 @@ export default function Demo() {
             disabled={loading || queriesLeft <= 0}
           >
             {loading ? (
-              <ActivityIndicator color="#2D5F3F" />
+              <ActivityIndicator color={Theme.colors.white} />
             ) : (
               <Text style={styles.askButtonText}>Ask AI</Text>
             )}
@@ -134,7 +135,7 @@ export default function Demo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF9F0',
+    backgroundColor: Theme.colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -155,11 +156,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#2D5F3F',
+    color: Theme.colors.primary,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7F71',
+    color: Theme.colors.textLight,
     textAlign: 'center',
   },
   form: {
@@ -170,61 +171,69 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#2D5F3F',
+    fontWeight: '700',
+    color: Theme.colors.primary,
   },
   textArea: {
-    backgroundColor: '#FFF',
+    backgroundColor: Theme.colors.white,
     borderWidth: 1.5,
-    borderColor: '#E0E9E3',
+    borderColor: Theme.colors.accent,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#2D5F3F',
-    minHeight: 100,
+    color: Theme.colors.primary,
+    minHeight: 120,
   },
   askButton: {
-    backgroundColor: '#A8D5BA',
+    backgroundColor: Theme.colors.secondary,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 25,
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primary,
+    ...Theme.shadows.soft
   },
   askButtonDisabled: {
     opacity: 0.6,
   },
   askButtonText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#2D5F3F',
+    fontWeight: '700',
+    color: Theme.colors.primary,
   },
   responseContainer: {
-    backgroundColor: '#F0F8F4',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: Theme.colors.softGreen,
+    borderRadius: 16,
+    padding: 20,
     gap: 8,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.softGreenBorder,
   },
   responseLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#2D5F3F',
+    fontWeight: '700',
+    color: Theme.colors.primary,
   },
   responseText: {
     fontSize: 15,
-    color: '#5A6B5E',
+    color: Theme.colors.primary,
     lineHeight: 22,
   },
   registerPrompt: {
-    backgroundColor: '#A8D5BA',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 24,
+    backgroundColor: Theme.colors.primary,
+    padding: 18,
+    borderRadius: 25,
+    marginTop: 30,
     marginBottom: 24,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.primary,
+    ...Theme.shadows.soft
   },
   registerPromptText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#2D5F3F',
+    fontWeight: '700',
+    color: Theme.colors.white,
     textAlign: 'center',
   },
 });

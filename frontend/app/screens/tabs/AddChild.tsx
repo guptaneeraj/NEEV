@@ -4,8 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { Theme } from '../../../constants/Theme';
+import DatePickerField from '../../../components/DatePickerField';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_URL = 'https://api.neevios.com';
 
 const DIET_OPTIONS = ['Vegetarian', 'Eggetarian', 'Non-vegetarian'];
 const SEX_OPTIONS = ['Male', 'Female', 'Prefer not to say'];
@@ -49,7 +51,7 @@ export default function AddChild() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#2D5F3F" />
+              <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
             </TouchableOpacity>
             <Text style={styles.title}>Add Another Child</Text>
           </View>
@@ -61,8 +63,7 @@ export default function AddChild() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Date of Birth</Text>
-              <TextInput style={styles.input} value={dob} onChangeText={setDob} placeholder="YYYY-MM-DD" placeholderTextColor="#B0BDB5" />
+              <DatePickerField label="Date of Birth" value={dob} onChange={setDob} />
             </View>
 
             <View style={styles.inputContainer}>
@@ -88,7 +89,7 @@ export default function AddChild() {
             </View>
 
             <TouchableOpacity style={[styles.submitButton, loading && styles.submitButtonDisabled]} onPress={handleSubmit} disabled={loading}>
-              {loading ? <ActivityIndicator color="#2D5F3F" /> : <Text style={styles.submitButtonText}>Add Child</Text>}
+              {loading ? <ActivityIndicator color={Theme.colors.primary} /> : <Text style={styles.submitButtonText}>Add Child</Text>}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -98,22 +99,22 @@ export default function AddChild() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF9F0' },
+  container: { flex: 1, backgroundColor: Theme.colors.background },
   keyboardView: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   backButton: { width: 44, height: 44, justifyContent: 'center' },
-  title: { fontSize: 24, fontWeight: '700', color: '#2D5F3F', marginLeft: 8 },
+  title: { fontSize: 24, fontWeight: '700', color: Theme.colors.primary, marginLeft: 8 },
   form: { gap: 24 },
   inputContainer: { gap: 8 },
-  label: { fontSize: 14, fontWeight: '600', color: '#2D5F3F' },
-  input: { backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#E0E9E3', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: '#2D5F3F' },
-  optionsContainer: { gap: 8 },
-  optionButton: { backgroundColor: '#FFF', borderWidth: 2, borderColor: '#E0E9E3', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  optionButtonActive: { borderColor: '#A8D5BA', backgroundColor: '#F0F8F4' },
-  optionText: { fontSize: 16, color: '#6B7F71' },
-  optionTextActive: { color: '#2D5F3F', fontWeight: '600' },
-  submitButton: { backgroundColor: '#A8D5BA', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
+  label: { fontSize: 14, fontWeight: '700', color: Theme.colors.primary },
+  input: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: Theme.colors.primary },
+  optionsContainer: { gap: 10 },
+  optionButton: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: 15, paddingVertical: 14, alignItems: 'center' },
+  optionButtonActive: { borderColor: Theme.colors.secondary, backgroundColor: Theme.colors.softGreen },
+  optionText: { fontSize: 16, color: Theme.colors.textLight, fontWeight: '600' },
+  optionTextActive: { color: Theme.colors.primary, fontWeight: '700' },
+  submitButton: { backgroundColor: Theme.colors.secondary, paddingVertical: 18, borderRadius: 25, alignItems: 'center', marginTop: 16, borderWidth: 1.5, borderColor: Theme.colors.primary },
   submitButtonDisabled: { opacity: 0.6 },
-  submitButtonText: { fontSize: 18, fontWeight: '600', color: '#2D5F3F' },
+  submitButtonText: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary },
 });

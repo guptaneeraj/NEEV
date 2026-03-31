@@ -5,9 +5,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import axios from 'axios';
+import { Theme } from '../../../constants/Theme';
 
-// Use host IP for Android emulator
-const API_URL = 'http://10.0.2.2:8001';
+const API_URL = 'https://api.neevios.com';
 const screenWidth = Dimensions.get('window').width;
 
 export default function Analysis() {
@@ -44,7 +44,7 @@ export default function Analysis() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#A8D5BA" />
+        <ActivityIndicator size="large" color={Theme.colors.secondary} />
       </View>
     );
   }
@@ -52,12 +52,12 @@ export default function Analysis() {
   const completionData = [
     {
       value: stats?.completed_tasks || 0,
-      color: '#A8D5BA',
+      color: Theme.colors.secondary,
       label: 'Done',
     },
     {
       value: (stats?.total_tasks || 0) - (stats?.completed_tasks || 0),
-      color: '#E0E9E3',
+      color: Theme.colors.accent,
       label: 'Pending',
     },
   ];
@@ -65,24 +65,24 @@ export default function Analysis() {
   const weeklyData = stats?.completion_by_date?.slice(-7).map((item: any) => ({
     value: item.count,
     label: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
-    frontColor: '#A8D5BA',
+    frontColor: Theme.colors.secondary,
   })) || [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#A8D5BA" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.secondary} />}
       >
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Ionicons name="checkmark-circle" size={32} color="#A8D5BA" />
+            <Ionicons name="checkmark-circle" size={32} color={Theme.colors.secondary} />
             <Text style={styles.statValue}>{stats?.completed_tasks || 0}</Text>
             <Text style={styles.statLabel}>Completed</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Ionicons name="list" size={32} color="#6B7F71" />
+            <Ionicons name="list" size={32} color={Theme.colors.textLight} />
             <Text style={styles.statValue}>{stats?.total_tasks || 0}</Text>
             <Text style={styles.statLabel}>Total Tasks</Text>
           </View>
@@ -90,13 +90,13 @@ export default function Analysis() {
 
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Ionicons name="trending-up" size={32} color="#A8D5BA" />
+            <Ionicons name="trending-up" size={32} color={Theme.colors.secondary} />
             <Text style={styles.statValue}>{stats?.completion_percentage || 0}%</Text>
             <Text style={styles.statLabel}>Completion</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Ionicons name="calendar" size={32} color="#6B7F71" />
+            <Ionicons name="calendar" size={32} color={Theme.colors.textLight} />
             <Text style={styles.statValue}>{stats?.weekly_adherence || 0}%</Text>
             <Text style={styles.statLabel}>Adherence</Text>
           </View>
@@ -123,11 +123,11 @@ export default function Analysis() {
             </View>
             <View style={styles.legend}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#A8D5BA' }]} />
+                <View style={[styles.legendColor, { backgroundColor: Theme.colors.secondary }]} />
                 <Text style={styles.legendText}>Completed: {stats?.completed_tasks || 0}</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#E0E9E3' }]} />
+                <View style={[styles.legendColor, { backgroundColor: Theme.colors.accent }]} />
                 <Text style={styles.legendText}>
                   Pending: {(stats?.total_tasks || 0) - (stats?.completed_tasks || 0)}
                 </Text>
@@ -151,8 +151,8 @@ export default function Analysis() {
                 yAxisThickness={0}
                 xAxisThickness={0}
                 noOfSections={4}
-                yAxisTextStyle={{ color: '#6B7F71', fontSize: 12 }}
-                xAxisLabelTextStyle={{ color: '#6B7F71', fontSize: 12 }}
+                yAxisTextStyle={{ color: Theme.colors.textLight, fontSize: 12 }}
+                xAxisLabelTextStyle={{ color: Theme.colors.textLight, fontSize: 12 }}
               />
             </View>
           </View>
@@ -160,7 +160,7 @@ export default function Analysis() {
 
         {!stats || (stats.completed_tasks === 0 && stats.total_tasks === 0) ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="stats-chart-outline" size={64} color="#E0E9E3" />
+            <Ionicons name="stats-chart-outline" size={64} color={Theme.colors.accent} />
             <Text style={styles.emptyText}>No data yet</Text>
             <Text style={styles.emptySubtext}>Complete tasks to see your progress</Text>
           </View>
@@ -171,112 +171,44 @@ export default function Analysis() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF9F0',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF9F0',
-  },
-  scrollView: {
-    flex: 1,
-    paddingTop: 10,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingHorizontal: 24,
-    marginBottom: 16,
-  },
+  container: { flex: 1, backgroundColor: Theme.colors.background },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.colors.background },
+  scrollView: { flex: 1, paddingTop: 10 },
+  statsGrid: { flexDirection: 'row', gap: 16, paddingHorizontal: 24, marginBottom: 16 },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: Theme.colors.white,
     padding: 20,
     borderRadius: 16,
     alignItems: 'center',
     gap: 8,
-    borderWidth: 1,
-    borderColor: '#E0E9E3',
+    borderWidth: 1.5,
+    borderColor: Theme.colors.accent,
+    ...Theme.shadows.soft
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2D5F3F',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6B7F71',
-  },
+  statValue: { fontSize: 24, fontWeight: '700', color: Theme.colors.primary },
+  statLabel: { fontSize: 12, color: Theme.colors.textLight, fontWeight: '600' },
   chartCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: Theme.colors.white,
     marginHorizontal: 24,
     marginBottom: 24,
     padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E0E9E3',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.accent,
+    ...Theme.shadows.soft
   },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2D5F3F',
-    marginBottom: 16,
-  },
-  chartContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  centerLabel: {
-    alignItems: 'center',
-  },
-  centerLabelValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2D5F3F',
-  },
-  centerLabelText: {
-    fontSize: 12,
-    color: '#6B7F71',
-  },
-  legend: {
-    gap: 8,
-    marginTop: 16,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 14,
-    color: '#6B7F71',
-  },
-  barChartContainer: {
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-    gap: 16,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#6B7F71',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#B0BDB5',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
+  chartTitle: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary, marginBottom: 16 },
+  chartContainer: { alignItems: 'center', marginVertical: 16 },
+  centerLabel: { alignItems: 'center' },
+  centerLabelValue: { fontSize: 20, fontWeight: '700', color: Theme.colors.primary },
+  centerLabelText: { fontSize: 12, color: Theme.colors.textLight },
+  legend: { gap: 8, marginTop: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  legendColor: { width: 16, height: 16, borderRadius: 4 },
+  legendText: { fontSize: 14, color: Theme.colors.textLight, fontWeight: '600' },
+  barChartContainer: { alignItems: 'center' },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, gap: 16 },
+  emptyText: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary },
+  emptySubtext: { fontSize: 14, color: Theme.colors.textLight, textAlign: 'center', paddingHorizontal: 32 },
 });
