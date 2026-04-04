@@ -8,8 +8,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  Modal,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
@@ -19,8 +17,9 @@ import { useAIStore } from '../../../store/useAIStore';
 import LoadingLogo from '../../../components/LoadingLogo';
 import Animated, { FadeInUp, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Theme } from '../../../constants/Theme';
+import { scale, verticalScale, moderateScale, SCREEN_HEIGHT } from '../../../utils/responsive';
+import NeevModal from '../../../components/NeevModal';
 
-const { height } = Dimensions.get('window');
 const API_URL = 'https://api.neevios.com';
 
 interface Task {
@@ -42,6 +41,13 @@ export default function Scheduler() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationText, setCelebrationText] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', icon: '' });
+
+  const showAlert = (title: string, message: string, icon: string = 'ℹ️') => {
+    setModalConfig({ title, message, icon });
+    setModalVisible(true);
+  };
 
   const loadSchedule = async () => {
     try {
@@ -112,7 +118,7 @@ export default function Scheduler() {
     const isCompleted = completedTasks.has(task.id);
 
     if (isCompleted) {
-      Alert.alert('Info', 'Task already completed today!');
+      showAlert('Task Completed', 'You\'ve already crushed this task for today! Keep up the great momentum.', '🌟');
       return;
     }
 
@@ -126,14 +132,14 @@ export default function Scheduler() {
       setCompletedTasks(new Set(completedTasks).add(task.id));
       triggerCelebration(task.title);
     } catch (error) {
-      Alert.alert('Error', 'Failed to complete task');
+      showAlert('Error', 'We couldn\'t update your task status. Please check your connection.', '❌');
     }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <LoadingLogo size={80} />
+        <LoadingLogo size={moderateScale(80)} />
       </View>
     );
   }
@@ -156,9 +162,9 @@ export default function Scheduler() {
               >
                 <View style={styles.checkbox}>
                   {isCompleted ? (
-                    <Ionicons name="checkmark-circle" size={28} color={Theme.colors.secondary} />
+                    <Ionicons name="checkmark-circle" size={moderateScale(28)} color={Theme.colors.secondary} />
                   ) : (
-                    <Ionicons name="ellipse-outline" size={28} color={Theme.colors.accent} />
+                    <Ionicons name="ellipse-outline" size={moderateScale(28)} color={Theme.colors.accent} />
                   )}
                 </View>
                 <View style={styles.taskContent}>
@@ -172,7 +178,7 @@ export default function Scheduler() {
           })
         ) : (
           <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={64} color={Theme.colors.accent} />
+            <Ionicons name="calendar-outline" size={moderateScale(64)} color={Theme.colors.accent} />
             <Text style={styles.emptyText}>No tasks available</Text>
             <Text style={styles.emptySubtext}>Complete your profile to get personalized tasks</Text>
           </View>
@@ -195,14 +201,14 @@ export default function Scheduler() {
                <View style={styles.indicator} />
                <Text style={styles.celebrationTitle}>Great work!</Text>
                <TouchableOpacity onPress={() => setShowCelebration(false)}>
-                 <Ionicons name="close-circle" size={24} color={Theme.colors.white} />
+                 <Ionicons name="close-circle" size={moderateScale(24)} color={Theme.colors.white} />
                </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.sheetContent}>
               {aiLoading && !celebrationText ? (
-                <View style={{ padding: 20, alignItems: 'center' }}>
-                  <LoadingLogo size={50} />
+                <View style={{ padding: moderateScale(20), alignItems: 'center' }}>
+                  <LoadingLogo size={moderateScale(50)} />
                 </View>
               ) : (
                 <Text style={styles.celebrationText}>{celebrationText}</Text>
@@ -211,6 +217,14 @@ export default function Scheduler() {
           </Animated.View>
         </View>
       )}
+
+      <NeevModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        icon={modalConfig.icon}
+        onConfirm={() => setModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -218,33 +232,33 @@ export default function Scheduler() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.colors.background },
-  scrollView: { flex: 1, paddingHorizontal: 24, paddingTop: 10 },
+  scrollView: { flex: 1, paddingHorizontal: scale(24), paddingTop: verticalScale(10) },
   taskCard: {
     flexDirection: 'row',
     backgroundColor: Theme.colors.white,
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    gap: 16,
+    padding: moderateScale(16),
+    borderRadius: moderateScale(16),
+    marginBottom: verticalScale(12),
+    gap: scale(16),
     borderWidth: 1.5,
     borderColor: Theme.colors.accent,
     ...Theme.shadows.soft
   },
   taskCardCompleted: { backgroundColor: Theme.colors.softGreen, borderColor: Theme.colors.secondary },
   checkbox: { justifyContent: 'center' },
-  taskContent: { flex: 1, gap: 4 },
-  taskTitle: { fontSize: 16, fontWeight: '700', color: Theme.colors.primary },
+  taskContent: { flex: 1, gap: verticalScale(4) },
+  taskTitle: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.primary },
   taskTitleCompleted: { textDecorationLine: 'line-through', color: Theme.colors.textLight },
-  taskFrequency: { fontSize: 14, color: Theme.colors.textLight },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, gap: 16 },
-  emptyText: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary },
-  emptySubtext: { fontSize: 14, color: Theme.colors.textLight, textAlign: 'center', paddingHorizontal: 32 },
+  taskFrequency: { fontSize: moderateScale(14), color: Theme.colors.textLight },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(64), gap: verticalScale(16) },
+  emptyText: { fontSize: moderateScale(18), fontWeight: '700', color: Theme.colors.primary },
+  emptySubtext: { fontSize: moderateScale(14), color: Theme.colors.textLight, textAlign: 'center', paddingHorizontal: scale(32) },
   sheetOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', zIndex: 1000 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)' },
-  bottomSheet: { backgroundColor: Theme.colors.primary, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingBottom: 40, maxHeight: height * 0.5, borderWidth: 1.5, borderColor: Theme.colors.primary },
-  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 20 },
-  indicator: { width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, position: 'absolute', top: 10, left: '50%', marginLeft: -20 },
-  celebrationTitle: { fontSize: 22, fontWeight: '700', color: Theme.colors.white },
-  sheetContent: { paddingHorizontal: 24, maxHeight: 300 },
-  celebrationText: { fontSize: 16, color: Theme.colors.white, lineHeight: 24, paddingBottom: 20 },
+  bottomSheet: { backgroundColor: Theme.colors.primary, borderTopLeftRadius: moderateScale(30), borderTopRightRadius: moderateScale(30), paddingBottom: verticalScale(40), maxHeight: SCREEN_HEIGHT * 0.5, borderWidth: 1.5, borderColor: Theme.colors.primary },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: scale(24), paddingVertical: verticalScale(20) },
+  indicator: { width: scale(40), height: verticalScale(4), backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: moderateScale(2), position: 'absolute', top: verticalScale(10), left: '50%', marginLeft: -scale(20) },
+  celebrationTitle: { fontSize: moderateScale(22), fontWeight: '700', color: Theme.colors.white },
+  sheetContent: { paddingHorizontal: scale(24), maxHeight: verticalScale(300) },
+  celebrationText: { fontSize: moderateScale(16), color: Theme.colors.white, lineHeight: moderateScale(24), paddingBottom: verticalScale(20) },
 });

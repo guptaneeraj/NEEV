@@ -109,13 +109,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyOtp = async (identifier: string, otp: string): Promise<boolean> => {
     try {
       const response = await api.post('/api/auth/verify-otp', { identifier, otp });
-      const { access_token } = response.data;
+      const { access_token, relationship_type } = response.data;
 
       await AsyncStorage.setItem('authToken', access_token);
       setToken(access_token);
-      const profile = await fetchProfile(access_token);
 
-      return !!(profile?.relationship_type);
+      // Fetch profile in background, don't await it to speed up navigation
+      fetchProfile(access_token);
+
+      return !!relationship_type;
     } catch (error: any) {
       console.error('Verify OTP Error:', error.message);
       throw new Error(error.response?.data?.detail || 'Verification failed');

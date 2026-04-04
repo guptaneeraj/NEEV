@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAIStore } from '../../../store/useAIStore';
 import axios from 'axios';
 import { Theme } from '../../../constants/Theme';
+import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
 
 const API_URL = 'https://api.neevios.com';
 
@@ -53,7 +54,7 @@ export default function AgeGuide() {
   };
 
   const handleActivityPress = (act: any) => {
-    // FIX: Navigate to ActivityGuidance instead of AIChat
+    // Navigate to ActivityGuidance instead of AIChat
     navigation.navigate('ActivityGuidance', {
       activity: {
         title: act.title,
@@ -65,7 +66,7 @@ export default function AgeGuide() {
   };
 
   const handlePlanPress = (duration: number) => {
-    // FIX: Open ActivityGuidance for the plan
+    // Open ActivityGuidance for the plan
     navigation.navigate('ActivityGuidance', {
       activity: {
         title: `${duration} Minute Daily Plan`,
@@ -79,10 +80,11 @@ export default function AgeGuide() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={28} color={Theme.colors.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backPetal}>
+          <Ionicons name="chevron-back" size={moderateScale(22)} color={Theme.colors.primary} />
         </TouchableOpacity>
         <Text style={styles.title}>For {child?.name || 'Baby'} at {ageMonths} months</Text>
+        <View style={{ width: scale(40) }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -116,11 +118,11 @@ export default function AgeGuide() {
             style={styles.activityCard}
             onPress={() => handleActivityPress(act)}
           >
-            <View>
+            <View style={{flex: 1}}>
               <Text style={styles.actTitle}>{act.title}</Text>
               <Text style={styles.actDesc} numberOfLines={1}>{act.description}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={Theme.colors.secondary} />
+            <Ionicons name="chevron-forward" size={moderateScale(20)} color={Theme.colors.secondary} />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -130,17 +132,44 @@ export default function AgeGuide() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 20, gap: 15 },
-  title: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: Theme.colors.primary, marginTop: 25, marginBottom: 15 },
-  aiCard: { backgroundColor: Theme.colors.white, borderRadius: 20, padding: 20, ...Theme.shadows.soft, borderWidth: 1.5, borderColor: Theme.colors.accent },
-  aiText: { fontSize: 16, color: Theme.colors.textLight, lineHeight: 24 },
-  plansRow: { flexDirection: 'row', gap: 10 },
-  planCard: { flex: 1, backgroundColor: Theme.colors.secondary, borderRadius: 15, padding: 15, alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.primary },
-  planTitle: { fontSize: 16, fontWeight: '700', color: Theme.colors.primary },
-  planSubtitle: { fontSize: 12, color: Theme.colors.primary, opacity: 0.7 },
-  activityCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Theme.colors.white, borderRadius: 15, padding: 18, marginBottom: 10, ...Theme.shadows.soft, borderWidth: 1.5, borderColor: Theme.colors.accent },
-  actTitle: { fontSize: 16, fontWeight: '700', color: Theme.colors.primary },
-  actDesc: { fontSize: 14, color: Theme.colors.textLight, marginTop: 2, width: '90%' }
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(15),
+    paddingVertical: verticalScale(10),
+  },
+  backPetal: {
+    width: scale(40),
+    height: scale(40),
+    backgroundColor: Theme.colors.white,
+    borderTopLeftRadius: moderateScale(16),
+    borderBottomRightRadius: moderateScale(16),
+    borderTopRightRadius: moderateScale(6),
+    borderBottomLeftRadius: moderateScale(6),
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Theme.shadows.soft
+  },
+  title: {
+    fontSize: moderateScale(18),
+    fontWeight: '800',
+    color: Theme.colors.primary,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: scale(10)
+  },
+  content: { paddingHorizontal: scale(20), paddingBottom: verticalScale(40) },
+  sectionTitle: { fontSize: moderateScale(20), fontWeight: '700', color: Theme.colors.primary, marginTop: verticalScale(25), marginBottom: verticalScale(15) },
+  aiCard: { backgroundColor: Theme.colors.white, borderRadius: moderateScale(20), padding: moderateScale(20), ...Theme.shadows.soft, borderWidth: 1.5, borderColor: Theme.colors.accent },
+  aiText: { fontSize: moderateScale(16), color: Theme.colors.textLight, lineHeight: moderateScale(24) },
+  plansRow: { flexDirection: 'row', gap: scale(10) },
+  planCard: { flex: 1, backgroundColor: Theme.colors.secondary, borderRadius: moderateScale(15), padding: moderateScale(15), alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.primary },
+  planTitle: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.primary },
+  planSubtitle: { fontSize: moderateScale(12), color: Theme.colors.primary, opacity: 0.7 },
+  activityCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Theme.colors.white, borderRadius: moderateScale(15), padding: moderateScale(18), marginBottom: verticalScale(10), ...Theme.shadows.soft, borderWidth: 1.5, borderColor: Theme.colors.accent },
+  actTitle: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.primary },
+  actDesc: { fontSize: moderateScale(14), color: Theme.colors.textLight, marginTop: verticalScale(2) }
 });

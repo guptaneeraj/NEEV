@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Theme } from '../../../constants/Theme';
+import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
+import NeevModal from '../../../components/NeevModal';
 
 const API_URL = 'https://api.neevios.com';
 
@@ -14,6 +16,29 @@ export default function Demo() {
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [queriesLeft, setQueriesLeft] = useState(3);
+
+  // Alert Modal state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    title: '',
+    message: '',
+    icon: '',
+    confirmText: 'Continue',
+    onConfirm: () => setAlertVisible(false),
+    showCancel: false
+  });
+
+  const showAlert = (title: string, message: string, icon: string = '⚠️', confirmText: string = 'Continue', onConfirm?: () => void, showCancel: boolean = false) => {
+    setAlertConfig({
+      title,
+      message,
+      icon,
+      confirmText,
+      onConfirm: onConfirm || (() => setAlertVisible(false)),
+      showCancel
+    });
+    setAlertVisible(true);
+  };
 
   const checkQueriesLeft = async () => {
     const count = await AsyncStorage.getItem('demoQueryCount');
@@ -28,19 +53,22 @@ export default function Demo() {
 
   const handleAsk = async () => {
     if (!query.trim()) {
-      Alert.alert('Error', 'Please enter a question');
+      showAlert('Error', 'Please enter a question', '❓');
       return;
     }
 
     const left = await checkQueriesLeft();
     if (left <= 0) {
-      Alert.alert(
+      showAlert(
         'Demo Limit Reached',
         'You have used all 3 demo queries. Please register to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Register', onPress: () => navigation.navigate('Register') },
-        ]
+        '🛑',
+        'Register',
+        () => {
+          setAlertVisible(false);
+          navigation.navigate('Register');
+        },
+        true
       );
       return;
     }
@@ -57,15 +85,20 @@ export default function Demo() {
 
       if (newCount >= 3) {
         setTimeout(() => {
-          Alert.alert(
+          showAlert(
             'Demo Limit Reached',
             'Register now to continue using NEEV!',
-            [{ text: 'Register', onPress: () => navigation.navigate('Register') }]
+            '✨',
+            'Register',
+            () => {
+              setAlertVisible(false);
+              navigation.navigate('Register');
+            }
           );
         }, 1000);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to get AI response. Please try again.');
+      showAlert('Error', 'Failed to get AI response. Please try again.', '❌');
     } finally {
       setLoading(false);
     }
@@ -75,11 +108,11 @@ export default function Demo() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
+          <Ionicons name="arrow-back" size={moderateScale(24)} color={Theme.colors.primary} />
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Ionicons name="chatbubbles" size={48} color={Theme.colors.secondary} />
+          <Ionicons name="chatbubbles" size={moderateScale(48)} color={Theme.colors.secondary} />
           <Text style={styles.title}>Demo Mode</Text>
           <Text style={styles.subtitle}>Try our AI assistant (3 queries left: {queriesLeft})</Text>
         </View>
@@ -128,6 +161,16 @@ export default function Demo() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <NeevModal
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        icon={alertConfig.icon}
+        confirmText={alertConfig.confirmText}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.showCancel ? () => setAlertVisible(false) : undefined}
+      />
     </SafeAreaView>
   );
 }
@@ -139,38 +182,38 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingHorizontal: scale(24),
+    paddingTop: verticalScale(16),
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: scale(44),
+    height: scale(44),
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: verticalScale(16),
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
-    gap: 12,
+    marginBottom: verticalScale(32),
+    gap: verticalScale(12),
   },
   title: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontWeight: '700',
     color: Theme.colors.primary,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: Theme.colors.textLight,
     textAlign: 'center',
   },
   form: {
-    gap: 20,
+    gap: verticalScale(20),
   },
   inputContainer: {
-    gap: 8,
+    gap: verticalScale(8),
   },
   label: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '700',
     color: Theme.colors.primary,
   },
@@ -178,17 +221,17 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.white,
     borderWidth: 1.5,
     borderColor: Theme.colors.accent,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
+    borderRadius: moderateScale(12),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(14),
+    fontSize: moderateScale(16),
     color: Theme.colors.primary,
-    minHeight: 120,
+    minHeight: verticalScale(120),
   },
   askButton: {
     backgroundColor: Theme.colors.secondary,
-    paddingVertical: 16,
-    borderRadius: 25,
+    paddingVertical: verticalScale(16),
+    borderRadius: moderateScale(25),
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Theme.colors.primary,
@@ -198,40 +241,40 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   askButtonText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: '700',
     color: Theme.colors.primary,
   },
   responseContainer: {
     backgroundColor: Theme.colors.softGreen,
-    borderRadius: 16,
-    padding: 20,
-    gap: 8,
+    borderRadius: moderateScale(16),
+    padding: moderateScale(20),
+    gap: verticalScale(8),
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
   },
   responseLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '700',
     color: Theme.colors.primary,
   },
   responseText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: Theme.colors.primary,
-    lineHeight: 22,
+    lineHeight: moderateScale(22),
   },
   registerPrompt: {
     backgroundColor: Theme.colors.primary,
-    padding: 18,
-    borderRadius: 25,
-    marginTop: 30,
-    marginBottom: 24,
+    padding: moderateScale(18),
+    borderRadius: moderateScale(25),
+    marginTop: verticalScale(30),
+    marginBottom: verticalScale(24),
     borderWidth: 1.5,
     borderColor: Theme.colors.primary,
     ...Theme.shadows.soft
   },
   registerPromptText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '700',
     color: Theme.colors.white,
     textAlign: 'center',

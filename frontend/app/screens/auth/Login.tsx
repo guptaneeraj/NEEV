@@ -6,10 +6,8 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   Image,
   ScrollView
 } from 'react-native';
@@ -19,6 +17,8 @@ import { Theme } from '../../../constants/Theme';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import Svg, { Path } from 'react-native-svg';
+import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
+import NeevModal from '../../../components/NeevModal';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -31,7 +31,6 @@ import Animated, {
   useAnimatedProps
 } from 'react-native-reanimated';
 
-const { width, height } = Dimensions.get('window');
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const LoginHeader = memo(({ isOtpSent, identifier, animatedLogoStyle }: { isOtpSent: boolean, identifier: string, animatedLogoStyle: any }) => (
@@ -70,6 +69,8 @@ export default function Login() {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', icon: '' });
   const inputs = useRef<any[]>([]);
 
   // Animation values
@@ -120,9 +121,14 @@ export default function Login() {
     };
   });
 
+  const showAlert = (title: string, message: string, icon: string = '⚠️') => {
+    setModalConfig({ title, message, icon });
+    setModalVisible(true);
+  };
+
   const handleSendOtp = async () => {
     if (!identifier) {
-      Alert.alert('Error', 'Please enter your Email');
+      showAlert('Email Required', 'Please enter your email to continue.', '📧');
       return;
     }
     setLoading(true);
@@ -131,7 +137,7 @@ export default function Login() {
       setIsOtpSent(true);
       setTimer(60);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to send OTP');
+      showAlert('Login Failed', error.message || 'Failed to send OTP. Please try again.', '❌');
     } finally {
       setLoading(false);
     }
@@ -160,15 +166,19 @@ export default function Login() {
   const handleVerifyOtp = async () => {
     const otpString = otp.join('');
     if (otpString.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+      showAlert('Invalid Code', 'Please enter the 6-digit verification code sent to your email.', '🔢');
       return;
     }
     setLoading(true);
     try {
       const onboardingComplete = await verifyOtp(identifier, otpString);
-      navigation.replace(onboardingComplete ? 'Home' : 'Register');
+      if (onboardingComplete) {
+        navigation.replace('Home');
+      } else {
+        navigation.replace('LampScreen', { onboardingComplete: false });
+      }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Invalid OTP');
+      showAlert('Verification Failed', error.message || 'The code you entered is incorrect.', '❌');
     } finally {
       setLoading(false);
     }
@@ -198,10 +208,10 @@ export default function Login() {
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity
-            onPress={() => isOtpSent ? setIsOtpSent(false) : navigation.goBack()}
+            onPress={() => isOtpSent ? setIsOtpSent(false) : (navigation.canGoBack() ? navigation.goBack() : navigation.replace('Landing'))}
             style={styles.backBtn}
           >
-            <Ionicons name="arrow-back" size={28} color="#FFF" />
+            <Ionicons name="arrow-back" size={scale(28)} color="#FFF" />
           </TouchableOpacity>
 
           <LoginHeader
@@ -213,7 +223,7 @@ export default function Login() {
           <View style={styles.formSection}>
             {!isOtpSent ? (
               <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={22} color={Theme.colors.secondary} style={styles.inputIcon} />
+                <Ionicons name="mail-outline" size={scale(22)} color={Theme.colors.secondary} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Email"
@@ -272,7 +282,7 @@ export default function Login() {
 
             <View style={styles.creativeFooter}>
               <View style={styles.heartbeatContainer}>
-                <Svg height="40" width={width - 60} viewBox="0 0 300 40">
+                <Svg height={verticalScale(40)} width={SCREEN_WIDTH - scale(60)} viewBox="0 0 300 40">
                   <Path
                     d="M0,20 L120,20 L130,10 L140,30 L150,5 L160,35 L170,20 L300,20"
                     stroke="rgba(168, 230, 207, 0.1)"
@@ -292,9 +302,17 @@ export default function Login() {
               <Text style={styles.footerNote}>Building values, one heartbeat at a time</Text>
             </View>
           </View>
-          <View style={{ height: 100 }} />
+          <View style={{ height: verticalScale(100) }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <NeevModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        icon={modalConfig.icon}
+        onConfirm={() => setModalVisible(false)}
+      />
     </View>
   );
 }
@@ -308,30 +326,30 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 30,
-    paddingTop: height * 0.08,
+    paddingHorizontal: scale(30),
+    paddingTop: verticalScale(60),
   },
   backBtn: {
     position: 'absolute',
-    top: 20,
+    top: verticalScale(20),
     left: 0,
     zIndex: 10,
-    width: 44,
-    height: 44,
+    width: scale(44),
+    height: scale(44),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 22,
+    borderRadius: scale(22),
   },
   header: {
     alignItems: 'center',
-    marginBottom: height * 0.05
+    marginBottom: verticalScale(40)
   },
   logoContainer: { alignItems: 'center' },
   logoGlowWrapper: {
-    width: height * 0.16,
-    height: height * 0.16,
-    borderRadius: (height * 0.16) / 2,
+    width: scale(130),
+    height: scale(130),
+    borderRadius: scale(65),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(168, 230, 207, 0.2)',
@@ -340,32 +358,32 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.9,
     shadowRadius: 25,
     elevation: 20,
-    marginBottom: 20,
+    marginBottom: verticalScale(16),
   },
   logoAnimatedContainer: {
-    width: height * 0.145,
-    height: height * 0.145,
-    borderRadius: (height * 0.145) / 2,
+    width: scale(115),
+    height: scale(115),
+    borderRadius: scale(57.5),
     overflow: 'hidden',
   },
   logo: {
-    width: height * 0.145,
-    height: height * 0.145,
+    width: scale(115),
+    height: scale(115),
     borderWidth: 2,
     borderColor: Theme.colors.secondary,
   },
   brandName: {
-    fontSize: height * 0.065,
+    fontSize: moderateScale(52),
     fontWeight: '900',
     color: '#FFF',
     letterSpacing: 12,
-    marginTop: height * 0.01,
+    marginTop: verticalScale(8),
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: {width: 0, height: 2},
     textShadowRadius: 15
   },
   tagline: {
-    fontSize: height * 0.018,
+    fontSize: moderateScale(14),
     color: '#FFF',
     fontWeight: '700',
     letterSpacing: 2,
@@ -373,10 +391,10 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: {width: 0, height: 1},
     textShadowRadius: 5,
-    lineHeight: height * 0.028,
+    lineHeight: moderateScale(22),
   },
   titleSection: {
-    marginTop: height * 0.04,
+    marginTop: verticalScale(30),
     alignItems: 'center',
   },
   formSection: {
@@ -384,39 +402,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: height * 0.045,
+    fontSize: moderateScale(36),
     fontWeight: '900',
     color: '#FFF',
-    marginBottom: 8,
+    marginBottom: verticalScale(8),
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: {width: 0, height: 2},
     textShadowRadius: 10
   },
   subtitle: {
-    fontSize: height * 0.018,
+    fontSize: moderateScale(14),
     color: '#E0E9E3',
-    marginBottom: height * 0.04,
+    marginBottom: verticalScale(30),
     textAlign: 'center',
     fontWeight: '700',
-    lineHeight: 24
+    lineHeight: moderateScale(20)
   },
   inputWrapper: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 30,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    height: height * 0.075,
+    borderRadius: moderateScale(30),
+    paddingHorizontal: scale(20),
+    marginBottom: verticalScale(16),
+    height: verticalScale(60),
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1.5,
     borderColor: 'rgba(168, 230, 207, 0.3)',
   },
-  inputIcon: { marginRight: 12 },
+  inputIcon: { marginRight: scale(12) },
   input: {
     flex: 1,
-    fontSize: 18,
+    fontSize: moderateScale(18),
     color: '#FFF',
     fontWeight: '800'
   },
@@ -424,14 +442,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 20,
+    marginBottom: verticalScale(16),
   },
   otpBox: {
-    width: width * 0.12,
+    width: scale(48),
     aspectRatio: 1,
-    borderRadius: 12,
+    borderRadius: moderateScale(12),
     textAlign: 'center',
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: '900',
     color: Theme.colors.primary,
     backgroundColor: '#FFF',
@@ -439,9 +457,9 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.secondary,
   },
   primaryButton: {
-    width: width - 60,
-    paddingVertical: height * 0.02,
-    borderRadius: 35,
+    width: SCREEN_WIDTH - scale(60),
+    paddingVertical: verticalScale(16),
+    borderRadius: moderateScale(35),
     alignItems: 'center',
     backgroundColor: Theme.colors.secondary,
     shadowColor: Theme.colors.secondary,
@@ -451,32 +469,32 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   primaryButtonText: {
-    fontSize: height * 0.022,
+    fontSize: moderateScale(18),
     fontWeight: '900',
     color: Theme.colors.primary,
     letterSpacing: 2
   },
-  resendBtn: { marginTop: 20 },
+  resendBtn: { marginTop: verticalScale(16) },
   resendText: {
     color: Theme.colors.secondary,
     fontWeight: '800',
-    fontSize: 16,
+    fontSize: moderateScale(16),
     textDecorationLine: 'underline'
   },
   creativeFooter: {
-    marginTop: height * 0.05,
+    marginTop: verticalScale(40),
     width: '100%',
     alignItems: 'center',
   },
   heartbeatContainer: {
     width: '100%',
-    height: 40,
+    height: verticalScale(40),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10
+    marginBottom: verticalScale(8)
   },
   footerNote: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: 'rgba(255,255,255,0.25)',
     fontWeight: '700',
     letterSpacing: 2,

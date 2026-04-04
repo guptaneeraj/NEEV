@@ -8,7 +8,6 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,6 +17,8 @@ import { useAIStore } from '../../../store/useAIStore';
 import LoadingLogo from '../../../components/LoadingLogo';
 import DatePickerField from '../../../components/DatePickerField';
 import { Theme } from '../../../constants/Theme';
+import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
+import NeevModal from '../../../components/NeevModal';
 
 const API_URL = 'https://api.neevios.com';
 
@@ -93,6 +94,10 @@ export default function HealthTracking() {
   const [subValue, setSubValue] = useState('');
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Alert Modal state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', icon: '' });
 
   // AI state
   const [aiResponse, setAiResponse] = useState<string | null>(null);
@@ -172,9 +177,14 @@ export default function HealthTracking() {
     }
   };
 
+  const showAlert = (title: string, message: string, icon: string = '⚠️') => {
+    setAlertConfig({ title, message, icon });
+    setAlertVisible(true);
+  };
+
   const handleAddRecord = async () => {
     if (!selectedValue) {
-      Alert.alert('Error', 'Please select a value');
+      showAlert('Selection Required', 'Please select a value for the record.', '📋');
       return;
     }
 
@@ -222,15 +232,15 @@ export default function HealthTracking() {
       askAI(buildAIQuestion(), records);
     } catch (error: any) {
       console.error('Add record error:', error);
-      const detail = error.response?.data?.detail || 'Failed to add record';
-      Alert.alert('Error', detail);
+      const detail = error.response?.data?.detail || 'Failed to add record. Please try again.';
+      showAlert('Error', detail, '❌');
     }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <LoadingLogo size={80} />
+        <LoadingLogo size={moderateScale(80)} />
       </View>
     );
   }
@@ -240,7 +250,7 @@ export default function HealthTracking() {
       <View style={styles.header}>
         <Text style={styles.title}>Health Tracking</Text>
         <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-          <Ionicons name="add" size={24} color={Theme.colors.white} />
+          <Ionicons name="add" size={moderateScale(24)} color={Theme.colors.white} />
         </TouchableOpacity>
       </View>
 
@@ -257,12 +267,12 @@ export default function HealthTracking() {
         {(aiLoading || aiResponse) && (
           <View style={[styles.aiCard, {backgroundColor: Theme.colors.softGreen, borderColor: Theme.colors.softGreenBorder}]}>
             <View style={styles.aiCardHeader}>
-              <Ionicons name="sparkles" size={16} color={Theme.colors.primary} />
+              <Ionicons name="sparkles" size={moderateScale(16)} color={Theme.colors.primary} />
               <Text style={styles.aiCardLabel}>Neev AI</Text>
             </View>
             {aiLoading && !aiResponse ? (
               <View style={styles.aiLoadingRow}>
-                <LoadingLogo size={24} />
+                <LoadingLogo size={moderateScale(24)} />
                 <Text style={styles.aiLoadingText}>Analysing record…</Text>
               </View>
             ) : (
@@ -277,7 +287,7 @@ export default function HealthTracking() {
               <View style={styles.recordHeader}>
                 <Ionicons
                   name={recordIcon(record.record_type) as any}
-                  size={24}
+                  size={moderateScale(24)}
                   color={Theme.colors.secondary}
                 />
                 <View style={styles.recordInfo}>
@@ -301,7 +311,7 @@ export default function HealthTracking() {
           ))
         ) : (
           <View style={styles.emptyContainer}>
-            <Ionicons name="fitness-outline" size={64} color={Theme.colors.accent} />
+            <Ionicons name="fitness-outline" size={moderateScale(64)} color={Theme.colors.accent} />
             <Text style={styles.emptyText}>No health records yet</Text>
             <Text style={styles.emptySubtext}>Start tracking your health data</Text>
           </View>
@@ -399,6 +409,14 @@ export default function HealthTracking() {
           </View>
         </View>
       </Modal>
+
+      <NeevModal
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        icon={alertConfig.icon}
+        onConfirm={() => setAlertVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -406,54 +424,54 @@ export default function HealthTracking() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 20 },
-  title: { fontSize: 28, fontWeight: '700', color: Theme.colors.primary },
-  addButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.colors.secondary, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.primary },
-  scrollView: { flex: 1, paddingHorizontal: 24 },
-  aiCard: { borderRadius: 16, borderWidth: 1.5, padding: 20, marginBottom: 16 },
-  aiCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  aiCardLabel: { fontSize: 11, fontWeight: '700', color: Theme.colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  aiCardText: { fontSize: 14, lineHeight: 21 },
-  aiLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  aiLoadingText: { fontSize: 14, color: Theme.colors.textLight },
-  recordCard: { padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1.5, ...Theme.shadows.soft },
-  recordHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: scale(24), paddingVertical: verticalScale(20) },
+  title: { fontSize: moderateScale(28), fontWeight: '700', color: Theme.colors.primary },
+  addButton: { width: scale(44), height: scale(44), borderRadius: scale(22), backgroundColor: Theme.colors.secondary, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.primary },
+  scrollView: { flex: 1, paddingHorizontal: scale(24) },
+  aiCard: { borderRadius: moderateScale(16), borderWidth: 1.5, padding: moderateScale(20), marginBottom: verticalScale(16) },
+  aiCardHeader: { flexDirection: 'row', alignItems: 'center', gap: scale(6), marginBottom: verticalScale(8) },
+  aiCardLabel: { fontSize: moderateScale(11), fontWeight: '700', color: Theme.colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  aiCardText: { fontSize: moderateScale(14), lineHeight: moderateScale(21) },
+  aiLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: scale(8) },
+  aiLoadingText: { fontSize: moderateScale(14), color: Theme.colors.textLight },
+  recordCard: { padding: moderateScale(16), borderRadius: moderateScale(16), marginBottom: verticalScale(12), borderWidth: 1.5, ...Theme.shadows.soft },
+  recordHeader: { flexDirection: 'row', alignItems: 'center', gap: scale(12) },
   recordInfo: { flex: 1 },
-  recordType: { fontSize: 16, fontWeight: '700', color: Theme.colors.primary },
-  recordDate: { fontSize: 14, color: Theme.colors.textLight, marginTop: 2 },
-  recordValue: { fontSize: 18, fontWeight: '800', color: Theme.colors.primary },
-  recordUnit: { fontSize: 12, color: Theme.colors.secondary, fontWeight: '700', marginTop: -2 },
-  recordSubValue: { fontSize: 13, color: Theme.colors.textLight, fontStyle: 'italic' },
-  recordNotes: { fontSize: 14, color: Theme.colors.textLight, marginTop: 12, fontStyle: 'italic' },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, gap: 16 },
-  emptyText: { fontSize: 18, fontWeight: '600', color: Theme.colors.textLight },
-  emptySubtext: { fontSize: 14, color: '#B0BDB5', textAlign: 'center' },
+  recordType: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.primary },
+  recordDate: { fontSize: moderateScale(14), color: Theme.colors.textLight, marginTop: verticalScale(2) },
+  recordValue: { fontSize: moderateScale(18), fontWeight: '800', color: Theme.colors.primary },
+  recordUnit: { fontSize: moderateScale(12), color: Theme.colors.secondary, fontWeight: '700', marginTop: -verticalScale(2) },
+  recordSubValue: { fontSize: moderateScale(13), color: Theme.colors.textLight, fontStyle: 'italic' },
+  recordNotes: { fontSize: moderateScale(14), color: Theme.colors.textLight, marginTop: verticalScale(12), fontStyle: 'italic' },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(64), gap: verticalScale(16) },
+  emptyText: { fontSize: moderateScale(18), fontWeight: '600', color: Theme.colors.textLight },
+  emptySubtext: { fontSize: moderateScale(14), color: '#B0BDB5', textAlign: 'center' },
   modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { borderRadius: 25, padding: 24, width: '90%', maxHeight: '90%' },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: Theme.colors.primary, marginBottom: 20 },
-  typeSelectorScroll: { marginBottom: 16 },
-  typeButton: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, marginRight: 8, height: 40 },
+  modalContent: { borderRadius: moderateScale(25), padding: moderateScale(24), width: '90%', maxHeight: '90%' },
+  modalTitle: { fontSize: moderateScale(22), fontWeight: '700', color: Theme.colors.primary, marginBottom: verticalScale(20) },
+  typeSelectorScroll: { marginBottom: verticalScale(16) },
+  typeButton: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: moderateScale(20), paddingVertical: verticalScale(8), paddingHorizontal: scale(16), marginRight: scale(8), height: verticalScale(40) },
   typeButtonActive: { borderColor: Theme.colors.secondary, backgroundColor: Theme.colors.softGreen },
-  typeText: { fontSize: 14, color: Theme.colors.textLight },
+  typeText: { fontSize: moderateScale(14), color: Theme.colors.textLight },
   typeTextActive: { color: Theme.colors.primary, fontWeight: '700' },
-  formContent: { gap: 16 },
-  pickerWrapper: { gap: 8 },
-  inputLabel: { fontSize: 13, color: Theme.colors.textLight, fontWeight: '600' },
-  dropdownList: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderRadius: 12, maxHeight: 150 },
-  dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.background },
+  formContent: { gap: verticalScale(16) },
+  pickerWrapper: { gap: verticalScale(8) },
+  inputLabel: { fontSize: moderateScale(13), color: Theme.colors.textLight, fontWeight: '600' },
+  dropdownList: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderRadius: moderateScale(12), maxHeight: verticalScale(150) },
+  dropdownItem: { padding: moderateScale(12), borderBottomWidth: 1, borderBottomColor: Theme.colors.background },
   dropdownItemActive: { backgroundColor: Theme.colors.softGreen },
-  dropdownItemText: { fontSize: 15, color: Theme.colors.textLight },
+  dropdownItemText: { fontSize: moderateScale(15), color: Theme.colors.textLight },
   dropdownItemTextActive: { color: Theme.colors.primary, fontWeight: '700' },
-  subValueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  subValueButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15, borderWidth: 1.5, borderColor: Theme.colors.accent, backgroundColor: Theme.colors.white },
+  subValueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: scale(8) },
+  subValueButton: { paddingHorizontal: scale(12), paddingVertical: verticalScale(6), borderRadius: moderateScale(15), borderWidth: 1.5, borderColor: Theme.colors.accent, backgroundColor: Theme.colors.white },
   subValueButtonActive: { backgroundColor: Theme.colors.secondary, borderColor: Theme.colors.secondary },
-  subValueText: { fontSize: 12, color: Theme.colors.textLight },
+  subValueText: { fontSize: moderateScale(12), color: Theme.colors.textLight },
   subValueTextActive: { color: Theme.colors.primary, fontWeight: '700' },
-  input: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, color: Theme.colors.primary },
-  textArea: { minHeight: 80, textAlignVertical: 'top' },
-  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  cancelButton: { flex: 1, paddingVertical: 15, borderRadius: 25, alignItems: 'center', borderWidth: 1.5 },
-  cancelButtonText: { fontSize: 16, fontWeight: '700', color: Theme.colors.textLight },
-  saveButton: { flex: 1, paddingVertical: 15, borderRadius: 25, alignItems: 'center', borderWidth: 1.5 },
-  saveButtonText: { fontSize: 16, fontWeight: '700' },
+  input: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderRadius: moderateScale(12), paddingHorizontal: scale(16), paddingVertical: verticalScale(12), fontSize: moderateScale(16), color: Theme.colors.primary },
+  textArea: { minHeight: verticalScale(80), textAlignVertical: 'top' },
+  modalButtons: { flexDirection: 'row', gap: scale(12), marginTop: verticalScale(24) },
+  cancelButton: { flex: 1, paddingVertical: verticalScale(15), borderRadius: moderateScale(25), alignItems: 'center', borderWidth: 1.5 },
+  cancelButtonText: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.textLight },
+  saveButton: { flex: 1, paddingVertical: verticalScale(15), borderRadius: moderateScale(25), alignItems: 'center', borderWidth: 1.5 },
+  saveButtonText: { fontSize: moderateScale(16), fontWeight: '700' },
 });

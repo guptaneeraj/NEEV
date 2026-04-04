@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
-from fastapi import FastAPI, HTTPException, Depends, Request, Header, APIRouter
+from fastapi import FastAPI, HTTPException, Depends, Request, Header, APIRouter, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -21,7 +21,7 @@ load_dotenv()
 
 # Local imports
 from database import get_db, engine, Base
-from models import User, Child, PregnancyInfo, AIQuery, MoodLog, HealthRecord, PlanTemplate, TaskCompletion, Milestone, CheckIn
+from models import User, Child, PregnancyInfo, AIQuery, MoodLog, HealthRecord, PlanTemplate, TaskCompletion, Milestone, CheckIn, MasterActivity
 
 # --- CONFIG ---
 SMTP_SERVER = "smtp.hostinger.com"
@@ -69,10 +69,15 @@ class SessionState:
 # --- REQUEST MODELS ---
 
 class ChildProfile(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     full_name: Optional[str] = None
     relationship_type: Optional[str] = None
+    child_first_name: Optional[str] = None
+    child_last_name: Optional[str] = None
     child_name: Optional[str] = None
     child_dob: Optional[str] = None  # YYYY-MM-DD
+    child_time_of_birth: Optional[str] = None
     child_sex: Optional[str] = None
     diet_preference: Optional[str] = None
     preferred_plan_type: Optional[str] = None
@@ -112,8 +117,10 @@ class OTPVerifyRequest(BaseModel):
     otp: str
 
 class CreateChildRequest(BaseModel):
-    name: str
+    first_name: str
+    last_name: str
     dob: str # YYYY-MM-DD
+    time_of_birth: Optional[str] = None # HH:MM AM/PM
     sex: Optional[str] = None
     diet_preference: Optional[str] = None
 
@@ -299,15 +306,16 @@ api_router = APIRouter()
 # --- AUTH BRIDGE ENDPOINTS ---
 
 @api_router.post("/api/auth/send-otp")
-async def send_otp(req: OTPRequest):
+async def send_otp(background_tasks: BackgroundTasks, req: OTPRequest):
     identifier = normalize_id(req.identifier)
     otp_code = str(random.randint(100000, 999999))
     temp_otp_store[identifier] = otp_code
+    
+    print(f"DEBUG: Generated OTP for {identifier}: {otp_code}")
 
     if "@" in identifier:
-        send_email_otp(identifier, otp_code)
+        background_tasks.add_task(send_email_otp, identifier, otp_code)
 
-    print(f"\n[AUTH] OTP for {identifier}: {otp_code}\n")
     return {"message": "OTP sent successfully"}
 
 @api_router.post("/api/auth/verify-otp")
@@ -339,7 +347,8 @@ async def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
         return {
             "access_token": f"mock-token-{user.id}-{uuid.uuid4()}",
             "user_id": str(user.id),
-            "onboarding_complete": user.onboarding_complete
+            "onboarding_complete": user.onboarding_complete,
+            "relationship_type": user.relationship_type
         }
     
     if not stored_otp:
@@ -361,6 +370,11 @@ async def get_profile(request: Request, user_id: Optional[str] = None, db: Sessi
     return {
         "id": str(user.id),
         "full_name": user.full_name,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "sex": user.sex,
+        "dob": user.dob.isoformat() if user.dob else None,
+        "marital_status": user.marital_status,
         "relationship_type": user.relationship_type,
         "stage": user.stage,
         "email": user.email,
@@ -369,8 +383,11 @@ async def get_profile(request: Request, user_id: Optional[str] = None, db: Sessi
         "children": [
             {
                 "id": str(c.id),
+                "first_name": c.first_name,
+                "last_name": c.last_name,
                 "name": c.name,
                 "dob": c.dob.isoformat() if c.dob else None,
+                "time_of_birth": c.time_of_birth,
                 "sex": c.sex,
                 "diet_preference": c.diet_preference,
                 "age_months": calculate_age_months(c.dob.date().isoformat()) if c.dob else 0
@@ -387,7 +404,10 @@ async def update_user(request: Request, update_data: Dict[str, Any], db: Session
 
     for key, value in update_data.items():
         if hasattr(user, key):
-            setattr(user, key, value)
+            if key == 'dob' and value:
+                setattr(user, key, datetime.fromisoformat(value))
+            else:
+                setattr(user, key, value)
 
     db.commit()
     db.refresh(user)
@@ -407,8 +427,11 @@ async def add_child(req: CreateChildRequest, request: Request, db: Session = Dep
 
     new_child = Child(
         user_id=user.id,
-        name=req.name,
+        first_name=req.first_name,
+        last_name=req.last_name,
+        name=f"{req.first_name} {req.last_name}",
         dob=datetime.fromisoformat(req.dob),
+        time_of_birth=req.time_of_birth,
         sex=req.sex,
         diet_preference=req.diet_preference
     )
@@ -419,7 +442,8 @@ async def add_child(req: CreateChildRequest, request: Request, db: Session = Dep
     db.refresh(new_child)
     return {
         "id": str(new_child.id),
-        "name": new_child.name,
+        "first_name": new_child.first_name,
+        "last_name": new_child.last_name,
         "onboarding_complete": user.onboarding_complete
     }
 
@@ -535,19 +559,99 @@ async def get_current_schedule(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     if not user: raise HTTPException(status_code=401, detail="Unauthorized")
 
-    plan = db.query(PlanTemplate).filter(PlanTemplate.plan_type == (user.preferred_plan_type or "20_min_plan")).first()
+    # Determine current week based on child's age or pregnancy week
+    current_week = 1
+    if user.stage == "pregnancy":
+        pinfo = db.query(PregnancyInfo).filter(PregnancyInfo.user_id == user.id).first()
+        if pinfo: current_week = pinfo.current_week
+    else:
+        # Get active child
+        child = None
+        if user.active_child_id:
+            child = db.query(Child).filter(Child.id == user.active_child_id).first()
+        elif user.children:
+            child = user.children[0]
+        
+        if child:
+            current_week = calculate_age_months(child.dob.date().isoformat()) * 4 # rough estimate
+
+    plan_type = user.preferred_plan_type or "20_min_plan"
+    plan = db.query(PlanTemplate).filter(
+        PlanTemplate.plan_type == plan_type,
+        PlanTemplate.week == current_week
+    ).first()
 
     if not plan:
-        return {"needs_plan": True}
+        # Fallback to week 1 if specific week not found
+        plan = db.query(PlanTemplate).filter(PlanTemplate.plan_type == plan_type).first()
+
+    if not plan:
+        return {"tasks": [], "week": current_week, "plan_type": plan_type}
 
     completions = db.query(TaskCompletion).filter(
         TaskCompletion.user_id == user.id,
-        TaskCompletion.week == plan.week
+        TaskCompletion.week == current_week
     ).all()
     completed_names = {c.activity_name for c in completions}
 
+    # activities_json is a list of activity names or objects
+    activity_list = plan.activities_json if isinstance(plan.activities_json, list) else []
+    
     tasks = []
-    # Implementation for fetching tasks...
-    return tasks
+    for item in activity_list:
+        # Handle if item is a string or a dictionary
+        name = item.get("title") if isinstance(item, dict) else item
+        
+        if not name: continue
+
+        master = db.query(MasterActivity).filter(MasterActivity.activity == name).first()
+        if master:
+            tasks.append({
+                "title": master.activity,
+                "domain": master.domain,
+                "description": master.description,
+                "tools": master.tools,
+                "completed": master.activity in completed_names,
+                "session_min": master.session_min,
+                "session_max": master.session_max
+            })
+        else:
+            tasks.append({
+                "title": name,
+                "completed": name in completed_names
+            })
+
+    return {
+        "tasks": tasks,
+        "week": current_week,
+        "plan_type": plan_type,
+        "completed_count": len(completed_names)
+    }
+
+@api_router.post("/api/tasks/toggle")
+async def toggle_task(req: ToggleTaskRequest, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+
+    existing = db.query(TaskCompletion).filter(
+        TaskCompletion.user_id == user.id,
+        TaskCompletion.activity_name == req.activity_name,
+        TaskCompletion.week == req.week
+    ).first()
+
+    if existing:
+        db.delete(existing)
+        status = "unmarked"
+    else:
+        new_completion = TaskCompletion(
+            user_id=user.id,
+            activity_name=req.activity_name,
+            week=req.week
+        )
+        db.add(new_completion)
+        status = "marked"
+    
+    db.commit()
+    return {"status": status}
 
 app.include_router(api_router)

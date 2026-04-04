@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import axios from 'axios';
 import { Theme } from '../../../constants/Theme';
+import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
 
 const API_URL = 'https://api.neevios.com';
-const screenWidth = Dimensions.get('window').width;
 
 export default function Analysis() {
   const { token } = useAuth();
@@ -76,13 +76,13 @@ export default function Analysis() {
       >
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Ionicons name="checkmark-circle" size={32} color={Theme.colors.secondary} />
+            <Ionicons name="checkmark-circle" size={moderateScale(32)} color={Theme.colors.secondary} />
             <Text style={styles.statValue}>{stats?.completed_tasks || 0}</Text>
             <Text style={styles.statLabel}>Completed</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Ionicons name="list" size={32} color={Theme.colors.textLight} />
+            <Ionicons name="list" size={moderateScale(32)} color={Theme.colors.textLight} />
             <Text style={styles.statValue}>{stats?.total_tasks || 0}</Text>
             <Text style={styles.statLabel}>Total Tasks</Text>
           </View>
@@ -90,13 +90,13 @@ export default function Analysis() {
 
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Ionicons name="trending-up" size={32} color={Theme.colors.secondary} />
+            <Ionicons name="trending-up" size={moderateScale(32)} color={Theme.colors.secondary} />
             <Text style={styles.statValue}>{stats?.completion_percentage || 0}%</Text>
             <Text style={styles.statLabel}>Completion</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Ionicons name="calendar" size={32} color={Theme.colors.textLight} />
+            <Ionicons name="calendar" size={moderateScale(32)} color={Theme.colors.textLight} />
             <Text style={styles.statValue}>{stats?.weekly_adherence || 0}%</Text>
             <Text style={styles.statLabel}>Adherence</Text>
           </View>
@@ -109,8 +109,8 @@ export default function Analysis() {
               <PieChart
                 data={completionData}
                 donut
-                radius={80}
-                innerRadius={50}
+                radius={moderateScale(80)}
+                innerRadius={moderateScale(50)}
                 centerLabelComponent={() => (
                   <View style={styles.centerLabel}>
                     <Text style={styles.centerLabelValue}>
@@ -142,17 +142,17 @@ export default function Analysis() {
             <View style={styles.barChartContainer}>
               <BarChart
                 data={weeklyData}
-                width={screenWidth - 80}
-                height={200}
-                barWidth={32}
-                spacing={24}
+                width={SCREEN_WIDTH - scale(80)}
+                height={verticalScale(200)}
+                barWidth={scale(32)}
+                spacing={scale(24)}
                 roundedTop
-                barBorderRadius={8}
+                barBorderRadius={moderateScale(8)}
                 yAxisThickness={0}
                 xAxisThickness={0}
                 noOfSections={4}
-                yAxisTextStyle={{ color: Theme.colors.textLight, fontSize: 12 }}
-                xAxisLabelTextStyle={{ color: Theme.colors.textLight, fontSize: 12 }}
+                yAxisTextStyle={{ color: Theme.colors.textLight, fontSize: moderateScale(12) }}
+                xAxisLabelTextStyle={{ color: Theme.colors.textLight, fontSize: moderateScale(12) }}
               />
             </View>
           </View>
@@ -160,7 +160,7 @@ export default function Analysis() {
 
         {!stats || (stats.completed_tasks === 0 && stats.total_tasks === 0) ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="stats-chart-outline" size={64} color={Theme.colors.accent} />
+            <Ionicons name="stats-chart-outline" size={moderateScale(64)} color={Theme.colors.accent} />
             <Text style={styles.emptyText}>No data yet</Text>
             <Text style={styles.emptySubtext}>Complete tasks to see your progress</Text>
           </View>
@@ -173,42 +173,42 @@ export default function Analysis() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.colors.background },
-  scrollView: { flex: 1, paddingTop: 10 },
-  statsGrid: { flexDirection: 'row', gap: 16, paddingHorizontal: 24, marginBottom: 16 },
+  scrollView: { flex: 1, paddingTop: verticalScale(10) },
+  statsGrid: { flexDirection: 'row', gap: scale(16), paddingHorizontal: scale(24), marginBottom: verticalScale(16) },
   statCard: {
     flex: 1,
     backgroundColor: Theme.colors.white,
-    padding: 20,
-    borderRadius: 16,
+    padding: moderateScale(20),
+    borderRadius: moderateScale(16),
     alignItems: 'center',
-    gap: 8,
+    gap: verticalScale(8),
     borderWidth: 1.5,
     borderColor: Theme.colors.accent,
     ...Theme.shadows.soft
   },
-  statValue: { fontSize: 24, fontWeight: '700', color: Theme.colors.primary },
-  statLabel: { fontSize: 12, color: Theme.colors.textLight, fontWeight: '600' },
+  statValue: { fontSize: moderateScale(24), fontWeight: '700', color: Theme.colors.primary },
+  statLabel: { fontSize: moderateScale(12), color: Theme.colors.textLight, fontWeight: '600' },
   chartCard: {
     backgroundColor: Theme.colors.white,
-    marginHorizontal: 24,
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 20,
+    marginHorizontal: scale(24),
+    marginBottom: verticalScale(24),
+    padding: moderateScale(20),
+    borderRadius: moderateScale(20),
     borderWidth: 1.5,
     borderColor: Theme.colors.accent,
     ...Theme.shadows.soft
   },
-  chartTitle: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary, marginBottom: 16 },
-  chartContainer: { alignItems: 'center', marginVertical: 16 },
+  chartTitle: { fontSize: moderateScale(18), fontWeight: '700', color: Theme.colors.primary, marginBottom: verticalScale(16) },
+  chartContainer: { alignItems: 'center', marginVertical: verticalScale(16) },
   centerLabel: { alignItems: 'center' },
-  centerLabelValue: { fontSize: 20, fontWeight: '700', color: Theme.colors.primary },
-  centerLabelText: { fontSize: 12, color: Theme.colors.textLight },
-  legend: { gap: 8, marginTop: 16 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  legendColor: { width: 16, height: 16, borderRadius: 4 },
-  legendText: { fontSize: 14, color: Theme.colors.textLight, fontWeight: '600' },
+  centerLabelValue: { fontSize: moderateScale(20), fontWeight: '700', color: Theme.colors.primary },
+  centerLabelText: { fontSize: moderateScale(12), color: Theme.colors.textLight },
+  legend: { gap: verticalScale(8), marginTop: verticalScale(16) },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: scale(12) },
+  legendColor: { width: scale(16), height: scale(16), borderRadius: moderateScale(4) },
+  legendText: { fontSize: moderateScale(14), color: Theme.colors.textLight, fontWeight: '600' },
   barChartContainer: { alignItems: 'center' },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 64, gap: 16 },
-  emptyText: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary },
-  emptySubtext: { fontSize: 14, color: Theme.colors.textLight, textAlign: 'center', paddingHorizontal: 32 },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(64), gap: verticalScale(16) },
+  emptyText: { fontSize: moderateScale(18), fontWeight: '700', color: Theme.colors.primary },
+  emptySubtext: { fontSize: moderateScale(14), color: Theme.colors.textLight, textAlign: 'center', paddingHorizontal: scale(32) },
 });

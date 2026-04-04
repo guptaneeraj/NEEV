@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
@@ -17,23 +16,18 @@ import { LineChart } from "react-native-gifted-charts";
 import { useAIStore } from '../../../store/useAIStore';
 import { useAuth } from '../../contexts/AuthContext';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import axios from 'axios';
-import LoadingLogo from '../../../components/LoadingLogo';
+import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
 
-const { width } = Dimensions.get('window');
-const API_URL = 'https://api.neevios.com';
-
-const MilestoneItem = ({ title, completed, date, type }: { title: string; completed: boolean; date?: string; type?: string }) => (
+const MilestoneItem = ({ title, completed, type }: { title: string; completed: boolean; date?: string; type?: string }) => (
   <View style={styles.milestoneItem}>
     <View style={[styles.milestoneCheck, completed && styles.milestoneCheckActive]}>
-      {completed && <Ionicons name="checkmark" size={14} color={Theme.colors.white} />}
+      {completed && <Ionicons name="checkmark" size={moderateScale(14)} color={Theme.colors.white} />}
     </View>
     <View style={styles.milestoneTextContainer}>
       <Text style={[styles.milestoneTitle, !completed && styles.milestoneTitlePending]}>
         {title}
       </Text>
       {type && <Text style={styles.milestoneType}>{type}</Text>}
-      {date && <Text style={styles.milestoneDate}>{date}</Text>}
     </View>
   </View>
 );
@@ -98,10 +92,11 @@ export default function Insights() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backPetal}>
+          <Ionicons name="chevron-back" size={moderateScale(22)} color={Theme.colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Development Intelligence</Text>
+        <View style={{ width: scale(40) }} />
       </View>
 
       <ScrollView
@@ -115,9 +110,9 @@ export default function Insights() {
             <View style={styles.chartWrapper}>
               <LineChart
                 data={chartData}
-                height={160}
-                width={width - 100}
-                initialSpacing={10}
+                height={verticalScale(160)}
+                width={SCREEN_WIDTH - scale(100)}
+                initialSpacing={scale(10)}
                 color={Theme.colors.primary}
                 thickness={3}
                 hideRules
@@ -138,9 +133,9 @@ export default function Insights() {
 
         <Animated.View entering={FadeInUp.delay(200)} style={[styles.card, styles.aiInsightCard, {backgroundColor: Theme.colors.softGreen, borderColor: Theme.colors.softGreenBorder}]}>
           <View style={styles.aiInsightHeader}>
-            <Ionicons name="sparkles" size={20} color={Theme.colors.primary} />
+            <Ionicons name="sparkles" size={moderateScale(20)} color={Theme.colors.primary} />
             <Text style={styles.aiInsightTitle}>AI Analysis</Text>
-            {isLoading && <ActivityIndicator size="small" color={Theme.colors.primary} style={{marginLeft: 10}} />}
+            {isLoading && <ActivityIndicator size="small" color={Theme.colors.primary} style={{marginLeft: scale(10)}} />}
           </View>
           <Text style={styles.labelSub}>{insightLabel}</Text>
           <Text style={styles.aiInsightText}>
@@ -161,7 +156,7 @@ export default function Insights() {
             onPress={() => navigation.navigate('Plan')}
           >
             <Text style={styles.actionBtnText}>Explore Recommended Tasks</Text>
-            <Ionicons name="arrow-forward" size={16} color={Theme.colors.primary} />
+            <Ionicons name="arrow-forward" size={moderateScale(16)} color={Theme.colors.primary} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -191,39 +186,63 @@ export default function Insights() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 24 },
-  backButton: { marginRight: 16 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: Theme.colors.primary },
-  scrollContent: { padding: 24 },
-  card: { borderRadius: 25, padding: 20, marginBottom: 24, borderWidth: 1.5, ...Theme.shadows.soft },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(15),
+    paddingVertical: verticalScale(10),
+  },
+  backPetal: {
+    width: scale(40),
+    height: scale(40),
+    backgroundColor: Theme.colors.white,
+    borderTopLeftRadius: moderateScale(16),
+    borderBottomRightRadius: moderateScale(16),
+    borderTopRightRadius: moderateScale(6),
+    borderBottomLeftRadius: moderateScale(6),
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Theme.shadows.soft
+  },
+  headerTitle: {
+    fontSize: moderateScale(20),
+    fontWeight: '800',
+    color: Theme.colors.primary,
+    flex: 1,
+    textAlign: 'center',
+    marginRight: scale(10)
+  },
+  scrollContent: { padding: scale(24) },
+  card: { borderRadius: moderateScale(25), padding: moderateScale(20), marginBottom: verticalScale(24), borderWidth: 1.5, ...Theme.shadows.soft },
   chartCard: {},
-  cardLabel: { fontSize: 16, fontWeight: '700', color: Theme.colors.primary, marginBottom: 20 },
-  chartWrapper: { alignItems: 'center', marginLeft: -20 },
-  chartFooter: { fontSize: 12, color: Theme.colors.textLight, textAlign: 'center', marginTop: 16 },
+  cardLabel: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.primary, marginBottom: verticalScale(20) },
+  chartWrapper: { alignItems: 'center', marginLeft: -scale(20) },
+  chartFooter: { fontSize: moderateScale(12), color: Theme.colors.textLight, textAlign: 'center', marginTop: verticalScale(16) },
   aiInsightCard: {},
-  aiInsightHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  aiInsightTitle: { fontSize: 14, fontWeight: '800', color: Theme.colors.primary, textTransform: 'uppercase' },
-  labelSub: { fontSize: 12, color: Theme.colors.textLight, marginBottom: 12, fontWeight: '600' },
-  aiInsightText: { fontSize: 16, color: Theme.colors.primary, lineHeight: 24 },
-  statusBadge: { backgroundColor: Theme.colors.softGreen, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginTop: 16, borderWidth: 1, borderColor: Theme.colors.primary },
-  statusText: { fontSize: 12, fontWeight: '700', color: Theme.colors.primary },
+  aiInsightHeader: { flexDirection: 'row', alignItems: 'center', gap: scale(8), marginBottom: verticalScale(4) },
+  aiInsightTitle: { fontSize: moderateScale(14), fontWeight: '800', color: Theme.colors.primary, textTransform: 'uppercase' },
+  labelSub: { fontSize: moderateScale(12), color: Theme.colors.textLight, marginBottom: verticalScale(12), fontWeight: '600' },
+  aiInsightText: { fontSize: moderateScale(16), color: Theme.colors.primary, lineHeight: moderateScale(24) },
+  statusBadge: { backgroundColor: Theme.colors.softGreen, alignSelf: 'flex-start', paddingHorizontal: scale(12), paddingVertical: verticalScale(6), borderRadius: moderateScale(12), marginTop: verticalScale(16), borderWidth: 1, borderColor: Theme.colors.primary },
+  statusText: { fontSize: moderateScale(12), fontWeight: '700', color: Theme.colors.primary },
   actionCard: {},
-  actionLabel: { fontSize: 14, fontWeight: '700', color: Theme.colors.textLight, textTransform: 'uppercase', marginBottom: 8 },
-  actionText: { fontSize: 15, color: Theme.colors.primary, lineHeight: 22, marginBottom: 20 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 25, gap: 10, borderWidth: 1.5 },
-  actionBtnText: { color: Theme.colors.primary, fontSize: 15, fontWeight: '700' },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Theme.colors.primary, marginBottom: 16 },
+  actionLabel: { fontSize: moderateScale(14), fontWeight: '700', color: Theme.colors.textLight, textTransform: 'uppercase', marginBottom: verticalScale(8) },
+  actionText: { fontSize: moderateScale(15), color: Theme.colors.primary, lineHeight: moderateScale(22), marginBottom: verticalScale(20) },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: verticalScale(14), borderRadius: moderateScale(25), gap: scale(10), borderWidth: 1.5 },
+  actionBtnText: { color: Theme.colors.primary, fontSize: moderateScale(15), fontWeight: '700' },
+  section: { marginBottom: verticalScale(24) },
+  sectionTitle: { fontSize: moderateScale(18), fontWeight: '700', color: Theme.colors.primary, marginBottom: verticalScale(16) },
   milestoneList: {},
-  milestoneItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Theme.colors.background },
-  milestoneCheck: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: Theme.colors.accent, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  milestoneItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: verticalScale(12), borderBottomWidth: 1, borderBottomColor: Theme.colors.background },
+  milestoneCheck: { width: scale(24), height: scale(24), borderRadius: scale(12), borderWidth: 2, borderColor: Theme.colors.accent, justifyContent: 'center', alignItems: 'center', marginRight: scale(16) },
   milestoneCheckActive: { backgroundColor: Theme.colors.secondary, borderColor: Theme.colors.secondary },
   milestoneTextContainer: { flex: 1 },
-  milestoneTitle: { fontSize: 15, fontWeight: '600', color: Theme.colors.primary },
+  milestoneTitle: { fontSize: moderateScale(15), fontWeight: '600', color: Theme.colors.primary },
   milestoneTitlePending: { color: Theme.colors.textLight },
-  milestoneDate: { fontSize: 12, color: Theme.colors.textLight, marginTop: 2 },
-  milestoneType: { fontSize: 10, color: Theme.colors.textLight, fontWeight: '700', textTransform: 'uppercase' },
-  footerSpacer: { height: 40 },
-  emptyText: { color: Theme.colors.textLight, textAlign: 'center' }
+  milestoneType: { fontSize: moderateScale(10), color: Theme.colors.textLight, fontWeight: '700', textTransform: 'uppercase' },
+  footerSpacer: { height: verticalScale(40) },
+  emptyText: { color: Theme.colors.textLight, textAlign: 'center', fontSize: moderateScale(14) }
 });

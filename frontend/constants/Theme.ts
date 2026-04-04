@@ -1,3 +1,5 @@
+import { scale, verticalScale, moderateScale } from '../utils/responsive';
+
 export const Theme = {
   colors: {
     background: '#FFF9F0',
@@ -25,18 +27,18 @@ export const Theme = {
     softVioletBorder: '#DDD6FE',
   },
   spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
+    xs: scale(4),
+    sm: scale(8),
+    md: scale(16),
+    lg: scale(24),
+    xl: scale(32),
   },
   borderRadius: {
-    sm: 8,
-    md: 15,
-    lg: 20,
-    xl: 25,
-    xxl: 30,
+    sm: moderateScale(8),
+    md: moderateScale(15),
+    lg: moderateScale(20),
+    xl: moderateScale(25),
+    xxl: moderateScale(30),
   },
   shadows: {
     soft: {
@@ -49,15 +51,15 @@ export const Theme = {
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: moderateScale(20),
+    padding: moderateScale(20),
     borderWidth: 1.5,
     borderColor: '#E2E8F0', // softSlateBorder default
   },
   button: {
-    borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 25,
+    borderRadius: moderateScale(25),
+    paddingVertical: verticalScale(15),
+    paddingHorizontal: scale(25),
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,

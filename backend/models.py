@@ -11,6 +11,11 @@ class User(Base):
     phone_number = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    sex = Column(String, nullable=True)
+    dob = Column(DateTime, nullable=True)
+    marital_status = Column(String, nullable=True)
     role = Column(String, default="user")
     stage = Column(String, default="pregnancy")
     relationship_type = Column(String, nullable=True)
@@ -39,8 +44,11 @@ class Child(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
     name = Column(String, nullable=False)
     dob = Column(DateTime, nullable=False)
+    time_of_birth = Column(String, nullable=True) # HH:MM AM/PM
     sex = Column(String, nullable=True)
     profile_image = Column(String, nullable=True) # Stores URL/path
     diet_preference = Column(String, nullable=True)

@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingLogo from '../../../components/LoadingLogo';
 import { Theme } from '../../../constants/Theme';
+import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
 
 export default function AIChat() {
   const navigation = useNavigation();
@@ -58,16 +58,16 @@ export default function AIChat() {
       <Animated.View style={[styles.floatingBackContainer, { opacity: fadeAnim }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backBtn}
+          style={styles.backPetal}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={Theme.colors.primary} />
+          <Ionicons name="chevron-back" size={moderateScale(22)} color={Theme.colors.primary} />
         </TouchableOpacity>
       </Animated.View>
 
       {loading && (
         <View style={styles.loadingOverlay}>
-          <LoadingLogo size={80} />
+          <LoadingLogo size={moderateScale(80)} />
         </View>
       )}
     </View>
@@ -79,24 +79,23 @@ const styles = StyleSheet.create({
   webview: { flex: 1 },
   floatingBackContainer: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
-    left: 20,
+    top: Platform.OS === 'ios' ? verticalScale(60) : verticalScale(40),
+    left: scale(20),
     zIndex: 10,
   },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  backPetal: {
+    width: scale(40),
+    height: scale(40),
+    backgroundColor: Theme.colors.white,
+    borderTopLeftRadius: moderateScale(16),
+    borderBottomRightRadius: moderateScale(16),
+    borderTopRightRadius: moderateScale(6),
+    borderBottomLeftRadius: moderateScale(6),
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    borderWidth: 1.5,
-    borderColor: Theme.colors.accent,
+    ...Theme.shadows.soft
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

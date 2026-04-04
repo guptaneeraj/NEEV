@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,9 +13,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Theme } from '../../../constants/Theme';
 import { useAIStore } from '../../../store/useAIStore';
 import { useAuth } from '../../contexts/AuthContext';
+import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
 import Animated, { FadeInRight } from 'react-native-reanimated';
-
-const { width, height } = Dimensions.get('window');
 
 const ActivityCard = ({ activity, index, navigation, user }: { activity: any; index: number; navigation: any; user: any }) => {
   const getIcon = () => {
@@ -53,7 +51,7 @@ const ActivityCard = ({ activity, index, navigation, user }: { activity: any; in
 
       <View style={styles.cardContent}>
         <View style={styles.iconContainer}>
-          <Ionicons name={getIcon()} size={height * 0.035} color={Theme.colors.primary} />
+          <Ionicons name={getIcon()} size={moderateScale(28)} color={Theme.colors.primary} />
         </View>
 
         <View style={styles.textContainer}>
@@ -67,7 +65,7 @@ const ActivityCard = ({ activity, index, navigation, user }: { activity: any; in
         onPress={handlePress}
       >
         <Text style={styles.actionButtonText}>{getActionLabel()} </Text>
-        <Ionicons name="chevron-forward" size={height * 0.02} color={Theme.colors.primary} />
+        <Ionicons name="chevron-forward" size={moderateScale(16)} color={Theme.colors.primary} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -91,13 +89,14 @@ export default function Plan() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={height * 0.03} color={Theme.colors.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backPetal}>
+          <Ionicons name="chevron-back" size={moderateScale(22)} color={Theme.colors.primary} />
         </TouchableOpacity>
-        <View>
+        <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Weekly Journey</Text>
           <Text style={styles.headerSubtitle}>Week 12 • Sensory Discovery</Text>
         </View>
+        <View style={{ width: scale(40) }} />
       </View>
 
       <ScrollView
@@ -122,7 +121,7 @@ export default function Plan() {
         <Text style={styles.sectionTitle}>This Week's Journey</Text>
 
         {isLoading && guidanceData?.daily_tasks?.length === 0 ? (
-          <ActivityIndicator color={Theme.colors.primary} style={{ marginTop: 40 }} />
+          <ActivityIndicator color={Theme.colors.primary} style={{ marginTop: verticalScale(40) }} />
         ) : (
           activities.map((activity, index) => (
             <ActivityCard key={index} activity={activity} index={index} navigation={navigation} user={user} />
@@ -140,67 +139,86 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: width * 0.06,
-    paddingVertical: height * 0.02,
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(15),
+    paddingVertical: verticalScale(10),
     backgroundColor: Theme.colors.background,
   },
-  backButton: { marginRight: 16, padding: 4 },
-  headerTitle: { fontSize: height * 0.03, fontWeight: '700', color: Theme.colors.primary },
-  headerSubtitle: { fontSize: height * 0.018, color: Theme.colors.textLight, marginTop: 2 },
-  scrollContent: { padding: width * 0.06 },
-  progressSection: { marginBottom: height * 0.04 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 },
-  progressLabel: { fontSize: height * 0.022, fontWeight: '700', color: Theme.colors.primary },
-  progressValue: { fontSize: height * 0.016, color: Theme.colors.primary, fontWeight: '600' },
-  progressBarBg: { height: height * 0.012, backgroundColor: Theme.colors.accent, borderRadius: 6, overflow: 'hidden' },
-  progressBarFill: { height: '100%', backgroundColor: Theme.colors.secondary, borderRadius: 6 },
-  sectionTitle: { fontSize: height * 0.026, fontWeight: '700', color: Theme.colors.primary, marginBottom: height * 0.02 },
+  backPetal: {
+    width: scale(40),
+    height: scale(40),
+    backgroundColor: Theme.colors.white,
+    borderTopLeftRadius: moderateScale(16),
+    borderBottomRightRadius: moderateScale(16),
+    borderTopRightRadius: moderateScale(6),
+    borderBottomLeftRadius: moderateScale(6),
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Theme.shadows.soft
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    marginRight: scale(10)
+  },
+  headerTitle: { fontSize: moderateScale(22), fontWeight: '800', color: Theme.colors.primary },
+  headerSubtitle: { fontSize: moderateScale(13), color: Theme.colors.textLight, marginTop: verticalScale(1), fontWeight: '600' },
+  scrollContent: { padding: scale(24) },
+  progressSection: { marginBottom: verticalScale(30) },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: verticalScale(12) },
+  progressLabel: { fontSize: moderateScale(18), fontWeight: '700', color: Theme.colors.primary },
+  progressValue: { fontSize: moderateScale(13), color: Theme.colors.primary, fontWeight: '600' },
+  progressBarBg: { height: verticalScale(10), backgroundColor: Theme.colors.accent, borderRadius: moderateScale(6), overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: Theme.colors.secondary, borderRadius: moderateScale(6) },
+  sectionTitle: { fontSize: moderateScale(22), fontWeight: '700', color: Theme.colors.primary, marginBottom: verticalScale(16) },
   card: {
     backgroundColor: Theme.colors.white,
-    borderRadius: 25,
-    padding: height * 0.022,
-    marginBottom: height * 0.022,
+    borderRadius: moderateScale(25),
+    padding: moderateScale(18),
+    marginBottom: verticalScale(18),
     ...Theme.shadows.soft,
     borderWidth: 1.5,
     borderColor: Theme.colors.accent
   },
   recommendedBadge: {
     backgroundColor: Theme.colors.softGreen,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(8),
     alignSelf: 'flex-start',
-    marginBottom: 15,
+    marginBottom: verticalScale(12),
     borderWidth: 1,
     borderColor: Theme.colors.softGreenBorder
   },
-  recommendedText: { fontSize: height * 0.013, fontWeight: '800', color: Theme.colors.primary },
-  cardContent: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  recommendedText: { fontSize: moderateScale(11), fontWeight: '800', color: Theme.colors.primary },
+  cardContent: { flexDirection: 'row', alignItems: 'center', marginBottom: verticalScale(16) },
   iconContainer: {
-    width: height * 0.07,
-    height: height * 0.07,
-    borderRadius: 18,
+    width: scale(56),
+    height: scale(56),
+    borderRadius: moderateScale(18),
     backgroundColor: Theme.colors.softSlate,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: scale(16),
     borderWidth: 1.5,
     borderColor: Theme.colors.softSlateBorder
   },
   textContainer: { flex: 1 },
-  activityTitle: { fontSize: height * 0.022, fontWeight: '700', color: Theme.colors.primary },
-  benefitText: { fontSize: height * 0.016, color: Theme.colors.textLight, marginTop: 4, lineHeight: height * 0.022 },
+  activityTitle: { fontSize: moderateScale(18), fontWeight: '700', color: Theme.colors.primary },
+  benefitText: { fontSize: moderateScale(13), color: Theme.colors.textLight, marginTop: verticalScale(4), lineHeight: moderateScale(18) },
   actionButton: {
     backgroundColor: Theme.colors.softGreen,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: height * 0.016,
-    borderRadius: 15,
-    gap: 8,
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(15),
+    gap: scale(8),
     borderWidth: 1.5,
     borderColor: Theme.colors.primary
   },
-  actionButtonText: { color: Theme.colors.primary, fontSize: height * 0.018, fontWeight: '700' },
-  footerSpacer: { height: height * 0.05 },
+  actionButtonText: { color: Theme.colors.primary, fontSize: moderateScale(14), fontWeight: '700' },
+  footerSpacer: { height: verticalScale(40) },
 });

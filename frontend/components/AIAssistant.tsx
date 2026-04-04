@@ -9,6 +9,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { WebView } from 'react-native-webview';
 import { Theme } from '../constants/Theme';
+import { scale, verticalScale, moderateScale } from '../utils/responsive';
 
 const AI_WEB_URL = 'https://ai.neevios.com';
 
@@ -22,7 +23,7 @@ export default function AIAssistant() {
         onPress={() => setIsOpen(true)}
         activeOpacity={0.8}
       >
-        <Ionicons name="chatbubbles" size={28} color={Theme.colors.white} />
+        <Ionicons name="chatbubbles" size={moderateScale(28)} color={Theme.colors.white} />
         <View style={styles.pulseDot} />
       </TouchableOpacity>
 
@@ -35,7 +36,7 @@ export default function AIAssistant() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => setIsOpen(false)} style={styles.closeButton}>
-              <Ionicons name="close" size={28} color={Theme.colors.primary} />
+              <Ionicons name="close" size={moderateScale(28)} color={Theme.colors.primary} />
             </TouchableOpacity>
           </View>
 
@@ -56,11 +57,11 @@ export default function AIAssistant() {
 const styles = StyleSheet.create({
   floatingButton: {
     position: 'absolute',
-    bottom: 80,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    bottom: verticalScale(80),
+    right: scale(24),
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
     backgroundColor: Theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -75,11 +76,11 @@ const styles = StyleSheet.create({
   },
   pulseDot: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    top: verticalScale(8),
+    right: scale(8),
+    width: scale(12),
+    height: scale(12),
+    borderRadius: scale(6),
     backgroundColor: Theme.colors.primary,
     borderWidth: 1,
     borderColor: Theme.colors.white,
@@ -89,16 +90,16 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.background,
   },
   header: {
-    height: 60,
+    height: verticalScale(60),
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: scale(16),
     borderBottomWidth: 1.5,
     borderBottomColor: Theme.colors.accent,
     backgroundColor: Theme.colors.background,
   },
   closeButton: {
-    padding: 4,
+    padding: scale(4),
   },
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -7,6 +7,9 @@ import axios from 'axios';
 import { useAIStore } from '../../../store/useAIStore';
 import LoadingLogo from '../../../components/LoadingLogo';
 import { Theme } from '../../../constants/Theme';
+import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
+import AppEmoji from '../../../components/AppEmoji';
+import NeevModal from '../../../components/NeevModal';
 
 const API_URL = 'https://api.neevios.com';
 const MOODS = [
@@ -27,6 +30,10 @@ export default function MoodTracking() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMood, setSelectedMood] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Alert Modal state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', icon: '' });
 
   // AI state
   const [aiResponse, setAiResponse] = useState<string | null>(null);
@@ -75,9 +82,14 @@ export default function MoodTracking() {
     }
   };
 
+  const showAlert = (title: string, message: string, icon: string = '⚠️') => {
+    setAlertConfig({ title, message, icon });
+    setAlertVisible(true);
+  };
+
   const handleLogMood = async () => {
     if (!selectedMood) {
-      Alert.alert('Error', 'Please select a mood');
+      showAlert('Selection Required', 'Please select a mood to continue.', '🤔');
       return;
     }
     const currentMood = selectedMood;
@@ -97,14 +109,14 @@ export default function MoodTracking() {
       // Trigger AI response
       askAI(currentMood, currentNotes);
     } catch (error) {
-      Alert.alert('Error', 'Failed to log mood');
+      showAlert('Error', 'Failed to log mood. Please try again.', '❌');
     }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <LoadingLogo size={80} />
+        <LoadingLogo size={moderateScale(80)} />
       </View>
     );
   }
@@ -116,17 +128,17 @@ export default function MoodTracking() {
         { (aiLoading || aiResponse) && (
           <View style={styles.aiCard}>
             <View style={styles.aiHeader}>
-              <Ionicons name="sparkles" size={18} color={Theme.colors.primary} />
+              <Ionicons name="sparkles" size={moderateScale(18)} color={Theme.colors.primary} />
               <Text style={styles.aiTitle}>Neev AI Advice</Text>
               {(aiLoading || aiResponse) && (
                 <TouchableOpacity onPress={() => {setAiResponse(null); setAiLoading(false);}} style={{marginLeft: 'auto'}}>
-                   <Ionicons name="close-circle" size={20} color={Theme.colors.textLight} />
+                   <Ionicons name="close-circle" size={moderateScale(20)} color={Theme.colors.textLight} />
                 </TouchableOpacity>
               )}
             </View>
             {aiLoading && !aiResponse ? (
-              <View style={{ padding: 10, alignItems: 'center' }}>
-                <LoadingLogo size={40} />
+              <View style={{ padding: moderateScale(10), alignItems: 'center' }}>
+                <LoadingLogo size={moderateScale(40)} />
               </View>
             ) : (
               <Text style={styles.aiText}>{aiResponse}</Text>
@@ -137,7 +149,7 @@ export default function MoodTracking() {
         <View style={styles.moodGrid}>
           {logs.map((log: any) => (
             <View key={log.id} style={styles.moodCard}>
-              <Text style={styles.moodEmoji}>{MOODS.find(m => m.label.toLowerCase() === log.mood.toLowerCase())?.emoji || '😊'}</Text>
+              <AppEmoji style={styles.moodEmoji}>{MOODS.find(m => m.label.toLowerCase() === log.mood.toLowerCase())?.emoji || '😊'}</AppEmoji>
               <Text style={styles.moodLabel}>{log.mood}</Text>
               <Text style={styles.moodDate}>{new Date(log.date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}</Text>
               {log.notes && <Text style={styles.moodNotes}>{log.notes}</Text>}
@@ -153,7 +165,7 @@ export default function MoodTracking() {
             <View style={styles.moodSelector}>
               {MOODS.map((mood) => (
                 <TouchableOpacity key={mood.label} style={[styles.moodOption, selectedMood === mood.label && styles.moodOptionActive]} onPress={() => setSelectedMood(mood.label)}>
-                  <Text style={styles.moodOptionEmoji}>{mood.emoji}</Text>
+                  <AppEmoji style={styles.moodOptionEmoji}>{mood.emoji}</AppEmoji>
                   <Text style={styles.moodOptionLabel}>{mood.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -172,8 +184,16 @@ export default function MoodTracking() {
       </Modal>
 
       <TouchableOpacity style={styles.floatingAddButton} onPress={() => { setAiResponse(null); setModalVisible(true); }}>
-        <Ionicons name="add" size={30} color={Theme.colors.white} />
+        <Ionicons name="add" size={moderateScale(30)} color={Theme.colors.white} />
       </TouchableOpacity>
+
+      <NeevModal
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        icon={alertConfig.icon}
+        onConfirm={() => setAlertVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -181,46 +201,46 @@ export default function MoodTracking() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.colors.background },
-  scrollView: { flex: 1, paddingHorizontal: 24, paddingTop: 10 },
+  scrollView: { flex: 1, paddingHorizontal: scale(24), paddingTop: verticalScale(10) },
   aiCard: {
     backgroundColor: Theme.colors.softGreen,
-    padding: 16,
-    borderRadius: 16,
+    padding: moderateScale(16),
+    borderRadius: moderateScale(16),
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
-    marginBottom: 20
+    marginBottom: verticalScale(20)
   },
-  aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  aiTitle: { fontSize: 14, fontWeight: '700', color: Theme.colors.primary, textTransform: 'uppercase' },
-  aiText: { fontSize: 15, color: Theme.colors.primary, lineHeight: 22 },
-  moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingBottom: 100 },
-  moodCard: { width: '47%', backgroundColor: Theme.colors.white, padding: 16, borderRadius: 16, alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.accent, ...Theme.shadows.soft },
-  moodEmoji: { fontSize: 40, marginBottom: 8 },
-  moodLabel: { fontSize: 16, fontWeight: '600', color: Theme.colors.primary, marginBottom: 4 },
-  moodDate: { fontSize: 12, color: Theme.colors.textLight },
-  moodNotes: { fontSize: 12, color: Theme.colors.textLight, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
+  aiHeader: { flexDirection: 'row', alignItems: 'center', gap: scale(8), marginBottom: verticalScale(8) },
+  aiTitle: { fontSize: moderateScale(14), fontWeight: '700', color: Theme.colors.primary, textTransform: 'uppercase' },
+  aiText: { fontSize: moderateScale(15), color: Theme.colors.primary, lineHeight: moderateScale(22) },
+  moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: scale(12), paddingBottom: verticalScale(100) },
+  moodCard: { width: '47%', backgroundColor: Theme.colors.white, padding: moderateScale(16), borderRadius: moderateScale(16), alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.accent, ...Theme.shadows.soft },
+  moodEmoji: { fontSize: moderateScale(40), marginBottom: verticalScale(8) },
+  moodLabel: { fontSize: moderateScale(16), fontWeight: '600', color: Theme.colors.primary, marginBottom: verticalScale(4) },
+  moodDate: { fontSize: moderateScale(12), color: Theme.colors.textLight },
+  moodNotes: { fontSize: moderateScale(12), color: Theme.colors.textLight, marginTop: verticalScale(8), textAlign: 'center', fontStyle: 'italic' },
   modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { backgroundColor: Theme.colors.background, borderRadius: 25, padding: 24, width: '85%', borderWidth: 1.5, borderColor: Theme.colors.accent },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: Theme.colors.primary, marginBottom: 20, textAlign: 'center' },
-  moodSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20, justifyContent: 'center' },
-  moodOption: { width: 80, backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: 15, paddingVertical: 12, alignItems: 'center' },
+  modalContent: { backgroundColor: Theme.colors.background, borderRadius: moderateScale(25), padding: moderateScale(24), width: '85%', borderWidth: 1.5, borderColor: Theme.colors.accent },
+  modalTitle: { fontSize: moderateScale(22), fontWeight: '700', color: Theme.colors.primary, marginBottom: verticalScale(20), textAlign: 'center' },
+  moodSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: scale(12), marginBottom: verticalScale(20), justifyContent: 'center' },
+  moodOption: { width: scale(80), backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: moderateScale(15), paddingVertical: verticalScale(12), alignItems: 'center' },
   moodOptionActive: { borderColor: Theme.colors.secondary, backgroundColor: Theme.colors.softGreen },
-  moodOptionEmoji: { fontSize: 32, marginBottom: 4 },
-  moodOptionLabel: { fontSize: 12, color: Theme.colors.textLight },
-  input: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, color: Theme.colors.primary, marginBottom: 12 },
-  textArea: { minHeight: 80, textAlignVertical: 'top' },
-  modalButtons: { flexDirection: 'row', gap: 12 },
-  cancelButton: { flex: 1, backgroundColor: Theme.colors.accent, paddingVertical: 14, borderRadius: 25, alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.accent },
-  cancelButtonText: { fontSize: 16, fontWeight: '700', color: Theme.colors.textLight },
-  saveButton: { flex: 1, backgroundColor: Theme.colors.primary, paddingVertical: 14, borderRadius: 25, alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.primary },
-  saveButtonText: { fontSize: 16, fontWeight: '700', color: Theme.colors.white },
+  moodOptionEmoji: { fontSize: moderateScale(32), marginBottom: verticalScale(4) },
+  moodOptionLabel: { fontSize: moderateScale(12), color: Theme.colors.textLight },
+  input: { backgroundColor: Theme.colors.white, borderWidth: 1.5, borderColor: Theme.colors.accent, borderRadius: moderateScale(12), paddingHorizontal: scale(16), paddingVertical: verticalScale(12), fontSize: moderateScale(16), color: Theme.colors.primary, marginBottom: verticalScale(12) },
+  textArea: { minHeight: verticalScale(80), textAlignVertical: 'top' },
+  modalButtons: { flexDirection: 'row', gap: scale(12) },
+  cancelButton: { flex: 1, backgroundColor: Theme.colors.accent, paddingVertical: verticalScale(14), borderRadius: moderateScale(25), alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.accent },
+  cancelButtonText: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.textLight },
+  saveButton: { flex: 1, backgroundColor: Theme.colors.primary, paddingVertical: verticalScale(14), borderRadius: moderateScale(25), alignItems: 'center', borderWidth: 1.5, borderColor: Theme.colors.primary },
+  saveButtonText: { fontSize: moderateScale(16), fontWeight: '700', color: Theme.colors.white },
   floatingAddButton: {
     position: 'absolute',
-    bottom: 30,
-    right: 30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    bottom: verticalScale(30),
+    right: scale(30),
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
     backgroundColor: Theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',

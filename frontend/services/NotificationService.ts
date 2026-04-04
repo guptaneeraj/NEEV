@@ -34,7 +34,10 @@ export const NotificationService = {
         id: 'morning-checkin',
         title: '🌅 Good Morning!',
         body: 'How did your baby sleep? Take 30 seconds to log the morning check-in.',
-        android: { channelId: 'checkin', pressAction: { id: 'open-checkin-morning' } },
+        android: {
+          channelId: 'checkin',
+          pressAction: { id: 'default' }
+        },
       },
       { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.DAILY }
     );
@@ -51,7 +54,10 @@ export const NotificationService = {
         id: 'evening-checkin',
         title: '🌙 Evening Check-in',
         body: 'How was your day with baby? Log feeds, mood and any new milestones.',
-        android: { channelId: 'checkin', pressAction: { id: 'open-checkin-evening' } },
+        android: {
+          channelId: 'checkin',
+          pressAction: { id: 'default' }
+        },
       },
       { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.DAILY }
     );
@@ -74,7 +80,10 @@ export const NotificationService = {
         id: 'activity-reminder',
         title: '⭐ Time for Activities!',
         body: "Your child's activity time is now. Check today's tasks.",
-        android: { channelId: 'activity', pressAction: { id: 'open-scheduler' } },
+        android: {
+          channelId: 'activity',
+          pressAction: { id: 'default' }
+        },
       },
       { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.DAILY }
     );
@@ -91,7 +100,10 @@ export const NotificationService = {
         id: 'weekly-summary',
         title: '📊 Your Weekly Summary',
         body: 'See how your week went and get AI insights for next week.',
-        android: { channelId: 'weekly', pressAction: { id: 'open-insights' } },
+        android: {
+          channelId: 'weekly',
+          pressAction: { id: 'default' }
+        },
       },
       { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.WEEKLY }
     );

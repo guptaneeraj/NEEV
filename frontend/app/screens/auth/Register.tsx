@@ -11,7 +11,6 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Dimensions,
   Vibration,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -20,8 +19,12 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import { Theme } from '../../../constants/Theme';
 import DatePickerField from '../../../components/DatePickerField';
+import AppEmoji from '../../../components/AppEmoji';
+import TimePickerField from '../../../components/TimePickerField';
 import LinearGradient from 'react-native-linear-gradient';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
+import NeevModal from '../../../components/NeevModal';
 import Animated, {
   FadeInUp,
   FadeInRight,
@@ -35,11 +38,6 @@ import Animated, {
   Extrapolate,
   runOnJS,
 } from 'react-native-reanimated';
-
-const { width, height } = Dimensions.get('window');
-
-// Responsive utility
-const hp = (percentage: number) => height * (percentage / 100);
 
 const RELATIONSHIP_OPTIONS = [
   { label: 'Mother', emoji: '👩' }, { label: 'Father', emoji: '👨' },
@@ -73,6 +71,15 @@ const SUB_DIET_OPTIONS: any = {
   ],
 };
 
+const MARITAL_STATUS_OPTIONS = [
+  { label: 'Single' },
+  { label: 'Married' },
+  { label: 'Partnered' },
+  { label: 'Divorced' },
+  { label: 'Widowed' },
+  { label: 'Separated' },
+];
+
 const PLAN_OPTIONS = [
   { label: 'Quick Pulse', duration: 20, value: '20_min_plan', icon: '⏱️', subLabel: 'Impactful sessions.' },
   { label: 'Steady Flow', duration: 40, value: '40_min_plan', icon: '⏲️', subLabel: 'Balanced daily growth.' },
@@ -89,7 +96,7 @@ const API_URL = "https://api.neevios.com";
 
 const CircularWeekDial = ({ currentWeek, onWeekChange }: { currentWeek: number, onWeekChange: (week: number) => void }) => {
   const rotation = useSharedValue(0);
-  const trackSize = width * 0.85;
+  const trackSize = SCREEN_WIDTH * 0.85;
   const RADIUS = (trackSize / 2) - 15;
   const CENTER = trackSize / 2;
 
@@ -125,10 +132,10 @@ const CircularWeekDial = ({ currentWeek, onWeekChange }: { currentWeek: number, 
   });
 
   return (
-    <View style={[styles.circularDialContainer, { height: trackSize + 40 }]}>
+    <View style={[styles.circularDialContainer, { height: trackSize + scale(40) }]}>
       <GestureDetector gesture={gesture}>
         <View style={[styles.circularTrack, { width: trackSize, height: trackSize, borderRadius: trackSize / 2 }]}>
-          <View style={[styles.circularGlow, { width: trackSize + 20, height: trackSize + 20, borderRadius: (trackSize + 20) / 2 }]} />
+          <View style={[styles.circularGlow, { width: trackSize + scale(20), height: trackSize + scale(20), borderRadius: (trackSize + scale(20)) / 2 }]} />
           <View style={[styles.ringWrapperLarge, { width: trackSize * 0.7, height: trackSize * 0.7, borderRadius: (trackSize * 0.7) / 2 }]}>
             <View style={styles.glowRingInnerLarge}>
               <Text style={styles.dialWeekNumLarge}>{currentWeek}</Text>
@@ -190,12 +197,11 @@ const ChronosStrip = ({ range, duration, selectedTime, onTimeChange }: { range: 
 
   const StripItem = ({ time, index }: { time: string, index: number }) => {
     const animatedStyle = useAnimatedStyle(() => {
-      const distance = Math.abs(scrollX.value - index * 100);
-      const scale = interpolate(distance, [0, 100], [2.2, 0.7], Extrapolate.CLAMP);
-      const opacity = interpolate(distance, [0, 150], [1, 0.1], Extrapolate.CLAMP);
-      const color = distance < 50 ? Theme.colors.secondary : Theme.colors.textLight;
+      const distance = Math.abs(scrollX.value - index * scale(100));
+      const scaleVal = interpolate(distance, [0, scale(100)], [2.2, 0.7], Extrapolate.CLAMP);
+      const opacity = interpolate(distance, [0, scale(150)], [1, 0.1], Extrapolate.CLAMP);
 
-      return { transform: [{ scale }], opacity, color };
+      return { transform: [{ scale: scaleVal }], opacity };
     });
 
     return (
@@ -236,13 +242,13 @@ const ChronosStrip = ({ range, duration, selectedTime, onTimeChange }: { range: 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            snapToInterval={100}
+            snapToInterval={scale(100)}
             decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: width / 2 - 50 }}
+            contentContainerStyle={{ paddingHorizontal: SCREEN_WIDTH / 2 - scale(50) }}
             onScroll={(e) => {
               const x = e.nativeEvent.contentOffset.x;
               scrollX.value = x;
-              const index = Math.round(x / 100);
+              const index = Math.round(x / scale(100));
 
               if (index >= 0 && index < times.length && times[index] !== selectedTime) {
                 onTimeChange(times[index]);
@@ -285,13 +291,21 @@ export default function Register() {
   const { token, fetchProfile } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   // Registration State
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [userSex, setUserSex] = useState('');
+  const [userDOB, setUserDOB] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('');
   const [relationship, setRelationship] = useState('');
   const [stage, setStage] = useState<'pregnancy' | 'child' | ''>('');
   const [pregnancyWeek, setPregnancyWeek] = useState(1);
-  const [childName, setChildName] = useState('');
+  const [childFirstName, setChildFirstName] = useState('');
+  const [childLastName, setChildLastName] = useState('');
   const [childDOB, setChildDOB] = useState('');
+  const [childTimeOfBirth, setChildTimeOfBirth] = useState('');
   const [childSex, setChildSex] = useState('');
   const [diet, setDiet] = useState('');
   const [subDiet, setSubDiet] = useState('');
@@ -299,18 +313,30 @@ export default function Register() {
   const [timeOfDay, setTimeOfDay] = useState('');
   const [specificTime, setSpecificTime] = useState('');
 
+  const showAlert = (title: string, message: string, icon: string = '⚠️') => {
+    setModalConfig({ title, message, icon });
+    setModalVisible(true);
+  };
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ title: '', message: '', icon: '' });
+
   const handleNext = () => {
-    if (step === 1 && !relationship) return Alert.alert('Wait', 'Select your role');
-    if (step === 2 && !stage) return Alert.alert('Wait', 'Select your stage');
-    if (step === 3) {
+    if (step === 1) {
+      if (!firstName || !lastName || !userSex || !userDOB || !maritalStatus)
+        return showAlert('Wait', 'Please complete your profile details', '👤');
+    }
+    if (step === 2 && !relationship) return showAlert('Wait', 'Select your role', '🤝');
+    if (step === 3 && !stage) return showAlert('Wait', 'Select your stage', '🌱');
+    if (step === 4) {
       if (stage === 'child') {
-        if (!childName || !childDOB) return Alert.alert('Wait', 'Enter child details');
+        if (!childFirstName || !childLastName || !childDOB || !childTimeOfBirth) return showAlert('Wait', 'Enter child details including time of birth', '👶');
       }
     }
-    if (step === 4 && (!diet || !subDiet)) return Alert.alert('Wait', 'Select your food philosophy');
-    if (step === 5 && (!planType || !timeOfDay || !specificTime)) return Alert.alert('Wait', 'Complete your daily commitment');
+    if (step === 5 && (!diet || !subDiet)) return showAlert('Wait', 'Select your food philosophy', '🥗');
+    if (step === 6 && (!planType || !timeOfDay || !specificTime)) return showAlert('Wait', 'Complete your daily commitment', '⏰');
 
-    if (step === 5) {
+    if (step === 6) {
       handleSubmit();
     } else {
       setStep(step + 1);
@@ -323,6 +349,12 @@ export default function Register() {
       const finalDiet = `${diet} - ${subDiet}`;
 
       await axios.patch(`${API_URL}/api/user/update`, {
+        first_name: firstName,
+        last_name: lastName,
+        sex: userSex,
+        dob: userDOB,
+        marital_status: maritalStatus,
+        full_name: `${firstName} ${lastName}`,
         relationship_type: relationship,
         preferred_plan_type: planType,
         preferred_time_of_day: timeOfDay,
@@ -341,8 +373,10 @@ export default function Register() {
         }, { headers: { Authorization: `Bearer ${token}` } });
       } else {
         await axios.post(`${API_URL}/api/user/child`, {
-          name: childName,
+          first_name: childFirstName,
+          last_name: childLastName,
           dob: childDOB,
+          time_of_birth: childTimeOfBirth,
           sex: childSex,
           diet_preference: finalDiet
         }, { headers: { Authorization: `Bearer ${token}` } });
@@ -351,29 +385,122 @@ export default function Register() {
       await fetchProfile();
       navigation.replace('Home');
     } catch (error: any) {
-      Alert.alert('Setup Failed', 'We couldn\'t save your preferences.');
+      showAlert('Setup Failed', 'We couldn\'t save your preferences. Please check your connection.', '❌');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    } else {
+      setShowExitModal(true);
     }
   };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
+        <NeevModal
+          visible={showExitModal}
+          title="Pause Your Journey?"
+          message="Your personalized path is almost ready. If you leave now, you'll need to start your profile setup again. Stay and continue?"
+          icon="🌱"
+          confirmText="Stay & Continue"
+          cancelText="Leave"
+          onConfirm={() => setShowExitModal(false)}
+          onCancel={() => {
+            setShowExitModal(false);
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          }}
+        />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()}>
-              <Ionicons name="arrow-back" size={28} color={Theme.colors.primary} />
+            <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
+              <Ionicons name="arrow-back" size={moderateScale(28)} color={Theme.colors.primary} />
             </TouchableOpacity>
 
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${(step / 5) * 100}%` }]} />
+                <View style={[styles.progressFill, { width: `${(step / 6) * 100}%` }]} />
               </View>
-              <Text style={styles.stepIndicator}>Step {step} of 5</Text>
+              <Text style={styles.stepIndicator}>Step {step} of 6</Text>
             </View>
 
             {step === 1 && (
+              <View style={styles.stepOneContainer}>
+                <StepHeader title="Tell Us About You" subtitle="Let's start by getting to know you better" />
+                <View style={[styles.form, { gap: verticalScale(14) }]}>
+                  <View style={styles.row}>
+                    <View style={styles.inputGroupFull}>
+                      <Text style={styles.fieldLabel}>First Name</Text>
+                      <TextInput
+                        style={styles.inputSmall}
+                        value={firstName}
+                        onChangeText={setFirstName}
+                        placeholder="First Name"
+                        placeholderTextColor="#B0BDB5"
+                      />
+                    </View>
+                    <View style={styles.inputGroupFull}>
+                      <Text style={styles.fieldLabel}>Last Name</Text>
+                      <TextInput
+                        style={styles.inputSmall}
+                        value={lastName}
+                        onChangeText={setLastName}
+                        placeholder="Last Name"
+                        placeholderTextColor="#B0BDB5"
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.fieldLabel}>Sex</Text>
+                    <View style={styles.row}>
+                      {[
+                        { label: 'Male' },
+                        { label: 'Female' },
+                        { label: 'Other' }
+                      ].map(s => (
+                        <TouchableOpacity
+                          key={s.label}
+                          style={[styles.sexBtnNoEmoji, userSex === s.label && styles.cardActive]}
+                          onPress={() => setUserSex(s.label)}
+                        >
+                          <Text style={[styles.label, userSex === s.label && styles.labelActive]}>{s.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <DatePickerField label="Your Birth Date" value={userDOB} onChange={setUserDOB} />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.fieldLabel}>Marital Status</Text>
+                    <View style={styles.gridStep1Compact}>
+                      {MARITAL_STATUS_OPTIONS.map((o, i) => (
+                        <Animated.View key={o.label} entering={FadeInRight.delay(i * 30)} style={styles.gridItemStep1Compact}>
+                          <TouchableOpacity
+                            style={[styles.cardStep1NoEmoji, maritalStatus === o.label && styles.cardActive]}
+                            onPress={() => setMaritalStatus(o.label)}
+                          >
+                            <Text style={styles.labelStep1} numberOfLines={1}>{o.label}</Text>
+                          </TouchableOpacity>
+                        </Animated.View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {step === 2 && (
               <View>
                 <StepHeader title="Your Special Connection" subtitle="We'd love to know your role in the child's life" />
                 <View style={styles.gridStep1}>
@@ -383,7 +510,7 @@ export default function Register() {
                         style={[styles.cardStep1, relationship === o.label && styles.cardActive]}
                         onPress={() => setRelationship(o.label)}
                       >
-                        <Text style={styles.emojiStep1}>{o.emoji}</Text>
+                        <AppEmoji style={styles.emojiStep1}>{o.emoji}</AppEmoji>
                         <Text style={styles.labelStep1} numberOfLines={1}>{o.label}</Text>
                       </TouchableOpacity>
                     </Animated.View>
@@ -392,7 +519,7 @@ export default function Register() {
               </View>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <View>
                 <StepHeader title="Your Current Chapter" subtitle="Tell us which beautiful path you are currently on" />
                 <View style={styles.verticalStack}>
@@ -402,14 +529,14 @@ export default function Register() {
                       onPress={() => setStage('pregnancy')}
                     >
                       <View style={styles.stageIconContainerLarge}>
-                        <Text style={styles.emojiExtraLarge}>🤰</Text>
+                        <AppEmoji style={styles.emojiExtraLarge}>🤰</AppEmoji>
                       </View>
                       <View style={styles.stageTextContainer}>
                         <Text style={styles.labelExtraLarge}>Expecting a Baby</Text>
                         <Text style={styles.stageSubtextLarge}>I'm on my wonderful pregnancy journey</Text>
                       </View>
                       {stage === 'pregnancy' && (
-                        <Ionicons name="checkmark-circle" size={28} color={Theme.colors.secondary} />
+                        <Ionicons name="checkmark-circle" size={moderateScale(28)} color={Theme.colors.secondary} />
                       )}
                     </TouchableOpacity>
                   </Animated.View>
@@ -420,14 +547,14 @@ export default function Register() {
                       onPress={() => setStage('child')}
                     >
                       <View style={styles.stageIconContainerLarge}>
-                        <Text style={styles.emojiExtraLarge}>👶</Text>
+                        <AppEmoji style={styles.emojiExtraLarge}>👶</AppEmoji>
                       </View>
                       <View style={styles.stageTextContainer}>
                         <Text style={styles.labelExtraLarge}>Parenting</Text>
                         <Text style={styles.stageSubtextLarge}>My child is already here and exploring the world</Text>
                       </View>
                       {stage === 'child' && (
-                        <Ionicons name="checkmark-circle" size={28} color={Theme.colors.secondary} />
+                        <Ionicons name="checkmark-circle" size={moderateScale(28)} color={Theme.colors.secondary} />
                       )}
                     </TouchableOpacity>
                   </Animated.View>
@@ -435,7 +562,7 @@ export default function Register() {
               </View>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <View>
                 <StepHeader
                   title={stage === 'pregnancy' ? "Your Amazing Journey" : "Little One's Identity"}
@@ -446,20 +573,33 @@ export default function Register() {
                 ) : (
                   <View style={styles.form}>
                     <View style={styles.nameInputWrapper}>
-                      <Text style={styles.bigBabyEmoji}>👶</Text>
-                      <View style={styles.inputGroupFull}>
-                        <Text style={styles.fieldLabel}>Child's Name ✍️</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={childName}
-                          onChangeText={setChildName}
-                          placeholder="Enter name"
-                          placeholderTextColor="#B0BDB5"
-                        />
+                      <AppEmoji style={styles.bigBabyEmoji}>👶</AppEmoji>
+                      <View style={{ flex: 1, gap: verticalScale(14) }}>
+                        <View style={styles.inputGroupFull}>
+                          <Text style={styles.fieldLabel}>First Name ✍️</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={childFirstName}
+                            onChangeText={setChildFirstName}
+                            placeholder="First Name"
+                            placeholderTextColor="#B0BDB5"
+                          />
+                        </View>
+                        <View style={styles.inputGroupFull}>
+                          <Text style={styles.fieldLabel}>Last Name ✍️</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={childLastName}
+                            onChangeText={setChildLastName}
+                            placeholder="Last Name"
+                            placeholderTextColor="#B0BDB5"
+                          />
+                        </View>
                       </View>
                     </View>
 
                     <DatePickerField label="Birth Date 🎂" value={childDOB} onChange={setChildDOB} />
+                    <TimePickerField label="Time of Birth 🕒" value={childTimeOfBirth} onChange={setChildTimeOfBirth} />
 
                     <View style={styles.inputGroup}>
                       <Text style={styles.fieldLabel}>Gender 🦋</Text>
@@ -474,7 +614,7 @@ export default function Register() {
                             style={[styles.sexBtn, childSex === s.label && styles.cardActive]}
                             onPress={() => setChildSex(s.label)}
                           >
-                            <Text style={styles.sexEmoji}>{s.emoji}</Text>
+                            <AppEmoji style={styles.sexEmoji}>{s.emoji}</AppEmoji>
                             <Text style={[styles.label, childSex === s.label && styles.labelActive]}>{s.label}</Text>
                           </TouchableOpacity>
                         ))}
@@ -485,7 +625,7 @@ export default function Register() {
               </View>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <View>
                 <StepHeader title="Your Food Philosophy" subtitle="Every family has a unique rhythm. What's yours?" />
                 <View style={diet ? styles.splitLayout : styles.gridVertical}>
@@ -495,7 +635,7 @@ export default function Register() {
                         key={o.label}
                         layout={Layout.springify()}
                         entering={FadeInLeft.delay(i * 100)}
-                        style={diet ? styles.compactWrapper : { width: '100%', marginBottom: 16 }}
+                        style={diet ? styles.compactWrapper : { width: '100%', marginBottom: verticalScale(16) }}
                       >
                         <TouchableOpacity
                           style={[
@@ -508,13 +648,13 @@ export default function Register() {
                           }}
                         >
                           <View style={diet ? styles.compactContent : styles.listItemLeading}>
-                            <Text style={diet ? styles.emojiMedium : styles.emojiExtraLarge}>{o.emoji}</Text>
+                            <AppEmoji style={diet ? styles.emojiMedium : styles.emojiExtraLarge}>{o.emoji}</AppEmoji>
                             <View style={diet ? { alignItems: 'center' } : { flex: 1 }}>
                               <Text style={diet ? styles.labelMedium : styles.labelExtraLarge}>{o.label}</Text>
                               <Text style={diet ? styles.labelSubLargeResponsive : styles.labelSubLarge}>{o.subLabel}</Text>
                             </View>
                           </View>
-                          {!diet && diet === o.label && <Ionicons name="checkmark-circle" size={24} color={Theme.colors.secondary} />}
+                          {!diet && diet === o.label && <Ionicons name="checkmark-circle" size={moderateScale(24)} color={Theme.colors.secondary} />}
                         </TouchableOpacity>
                       </Animated.View>
                     ))}
@@ -528,12 +668,12 @@ export default function Register() {
                           style={[styles.subOptionSideItem, subDiet === sub.label && styles.subOptionActive]}
                           onPress={() => setSubDiet(sub.label)}
                         >
-                          <Text style={styles.emojiLarge}>{sub.emoji}</Text>
+                          <AppEmoji style={styles.emojiLarge}>{sub.emoji}</AppEmoji>
                           <View style={{ flex: 1 }}>
                             <Text style={styles.subOptionSideLabel}>{sub.label}</Text>
                             <Text style={styles.subOptionSideSubLabel} numberOfLines={3}>{sub.subLabel}</Text>
                           </View>
-                          {subDiet === sub.label && <Ionicons name="checkmark-circle" size={20} color={Theme.colors.secondary} />}
+                          {subDiet === sub.label && <Ionicons name="checkmark-circle" size={moderateScale(20)} color={Theme.colors.secondary} />}
                         </TouchableOpacity>
                       ))}
                     </Animated.View>
@@ -542,7 +682,7 @@ export default function Register() {
               </View>
             )}
 
-            {step === 5 && (
+            {step === 6 && (
               <View>
                 <StepHeader title="Daily Commitment" subtitle="Design a pace that flows naturally with your lifestyle." />
                 <View style={styles.splitLayout}>
@@ -558,7 +698,7 @@ export default function Register() {
                           onPress={() => setPlanType(p.value)}
                         >
                           <View style={styles.compactContent}>
-                            <Text style={styles.emojiMedium}>{p.icon}</Text>
+                            <AppEmoji style={styles.emojiMedium}>{p.icon}</AppEmoji>
                             <View style={{ alignItems: 'center' }}>
                               <Text style={styles.labelMedium}>{p.label}</Text>
                               <Text style={styles.labelSubLargeResponsive}>{p.subLabel}</Text>
@@ -576,19 +716,19 @@ export default function Register() {
                         style={[styles.subOptionSideItemSmall, timeOfDay === t.value && styles.subOptionActive]}
                         onPress={() => { setTimeOfDay(t.value); setSpecificTime(''); }}
                       >
-                        <Text style={styles.emojiLarge}>{t.icon}</Text>
+                        <AppEmoji style={styles.emojiLarge}>{t.icon}</AppEmoji>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.subOptionSideLabel}>{t.label}</Text>
                           <Text style={styles.subOptionSideSubLabel}>{t.subLabel}</Text>
                         </View>
-                        {timeOfDay === t.value && <Ionicons name="checkmark-circle" size={20} color={Theme.colors.secondary} />}
+                        {timeOfDay === t.value && <Ionicons name="checkmark-circle" size={moderateScale(20)} color={Theme.colors.secondary} />}
                       </TouchableOpacity>
                     ))}
                   </View>
                 </View>
 
                 {timeOfDay && planType && (
-                  <Animated.View entering={FadeInUp} style={{ marginTop: 8 }}>
+                  <Animated.View entering={FadeInUp} style={{ marginTop: verticalScale(8) }}>
                     <Text style={styles.sectionLabelSmall}>Set Your Moment</Text>
                     <ChronosStrip
                       range={TIME_WINDOW_OPTIONS.find(o => o.value === timeOfDay)!.range}
@@ -606,12 +746,20 @@ export default function Register() {
               onPress={handleNext}
               disabled={loading}
             >
-              {loading ? <ActivityIndicator color={Theme.colors.primary} /> : <Text style={styles.nextBtnTxt}>{step === 5 ? 'Complete Profile' : 'Next Step'}</Text>}
+              {loading ? <ActivityIndicator color={Theme.colors.primary} /> : <Text style={styles.nextBtnTxt}>{step === 6 ? 'Complete Profile' : 'Next Step'}</Text>}
             </TouchableOpacity>
 
-            <View style={{ height: hp(4) }} />
+            <View style={{ height: verticalScale(30) }} />
           </ScrollView>
         </KeyboardAvoidingView>
+
+        <NeevModal
+          visible={modalVisible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          icon={modalConfig.icon}
+          onConfirm={() => setModalVisible(false)}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -620,49 +768,49 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.colors.background },
   keyboardView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingTop: hp(2) },
+  scrollContent: { paddingHorizontal: scale(24), paddingTop: verticalScale(10) },
   backBtn: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Theme.colors.white,
-    borderRadius: 20,
+    borderRadius: scale(20),
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
-    marginBottom: hp(1.5),
+    marginBottom: verticalScale(12),
     ...Theme.shadows.soft
   },
-  progressContainer: { marginBottom: hp(1.5) },
+  progressContainer: { marginBottom: verticalScale(12) },
   progressBar: {
-    height: 6,
+    height: verticalScale(6),
     backgroundColor: Theme.colors.accent,
-    borderRadius: 3,
+    borderRadius: moderateScale(3),
     overflow: 'hidden',
-    marginBottom: 8
+    marginBottom: verticalScale(8)
   },
   progressFill: {
     height: '100%',
     backgroundColor: Theme.colors.secondary,
-    borderRadius: 3
+    borderRadius: moderateScale(3)
   },
   stepIndicator: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontWeight: '800',
     color: Theme.colors.primary,
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 1
   },
-  stepHeader: { marginBottom: hp(1.5), alignItems: 'center' },
-  title: { fontSize: hp(3.8), fontWeight: '800', color: Theme.colors.primary, marginBottom: 4, textAlign: 'center' },
-  subtitle: { fontSize: hp(1.8), color: Theme.colors.textLight, lineHeight: 20, fontWeight: '500', textAlign: 'center' },
-  gridStep1: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
-  gridItemStep1: { width: '33.33%', padding: 6 },
+  stepHeader: { marginBottom: verticalScale(12), alignItems: 'center' },
+  title: { fontSize: moderateScale(28), fontWeight: '800', color: Theme.colors.primary, marginBottom: verticalScale(2), textAlign: 'center' },
+  subtitle: { fontSize: moderateScale(14), color: Theme.colors.textLight, lineHeight: moderateScale(20), fontWeight: '500', textAlign: 'center' },
+  gridStep1: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -scale(6) },
+  gridItemStep1: { width: '33.33%', padding: scale(6) },
   cardStep1: {
     backgroundColor: Theme.colors.white,
-    borderRadius: 20,
-    paddingVertical: 16,
+    borderRadius: moderateScale(20),
+    paddingVertical: verticalScale(16),
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
@@ -670,65 +818,96 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...Theme.shadows.soft
   },
-  card: {
-    width: (width - 48 - 24) / 3,
-    backgroundColor: Theme.colors.white,
-    borderRadius: 20,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Theme.colors.softGreenBorder,
-    ...Theme.shadows.soft
-  },
   cardActive: {
     borderColor: Theme.colors.secondary,
     backgroundColor: Theme.colors.softGreen
   },
-  emojiStep1: { fontSize: 32, marginBottom: 6 },
-  emoji: { fontSize: 24, marginBottom: 4 },
-  labelStep1: { fontSize: 12, color: Theme.colors.primary, textAlign: 'center', fontWeight: '800' },
-  label: { fontSize: 13, color: Theme.colors.primary, textAlign: 'center', fontWeight: '700' },
+  emojiStep1: { fontSize: moderateScale(32), marginBottom: verticalScale(6) },
+  emojiStep1Small: { fontSize: moderateScale(24), marginBottom: verticalScale(4) },
+  labelStep1: { fontSize: moderateScale(12), color: Theme.colors.primary, textAlign: 'center', fontWeight: '800' },
+  label: { fontSize: moderateScale(13), color: Theme.colors.primary, textAlign: 'center', fontWeight: '700' },
   labelActive: { color: Theme.colors.primary },
-  row: { flexDirection: 'row', gap: 16 },
+  row: { flexDirection: 'row', gap: scale(12) },
 
-  verticalStack: { gap: 16, marginTop: 10 },
+  stepOneContainer: {
+    flex: 1,
+    minHeight: verticalScale(500),
+  },
+  gridStep1Compact: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -scale(4)
+  },
+  gridItemStep1Compact: {
+    width: '33.33%',
+    padding: scale(4)
+  },
+  cardStep1NoEmoji: {
+    backgroundColor: Theme.colors.white,
+    borderRadius: moderateScale(15),
+    paddingVertical: verticalScale(14),
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Theme.colors.softGreenBorder,
+    justifyContent: 'center',
+    ...Theme.shadows.soft
+  },
+  sexBtnNoEmoji: {
+    flex: 1,
+    backgroundColor: Theme.colors.white,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.accent,
+    borderRadius: moderateScale(15),
+    paddingVertical: verticalScale(14),
+    alignItems: 'center',
+    ...Theme.shadows.soft
+  },
+  inputSmall: {
+    backgroundColor: Theme.colors.white,
+    borderWidth: 1.5,
+    borderColor: Theme.colors.accent,
+    borderRadius: moderateScale(15),
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(12),
+    fontSize: moderateScale(15),
+    color: Theme.colors.primary,
+    fontWeight: '600'
+  },
+
+  verticalStack: { gap: verticalScale(16), marginTop: verticalScale(10) },
   stageCardFull: {
     width: '100%',
     backgroundColor: Theme.colors.white,
-    borderRadius: 24,
-    padding: 32,
+    borderRadius: moderateScale(24),
+    padding: moderateScale(32),
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
     ...Theme.shadows.soft,
-    minHeight: hp(20)
+    minHeight: verticalScale(160)
   },
   stageIconContainerLarge: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: scale(90),
+    height: scale(90),
+    borderRadius: scale(45),
     backgroundColor: Theme.colors.softGreen,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 24
+    marginRight: scale(24)
   },
-  emojiExtraLarge: { fontSize: 50 },
+  emojiExtraLarge: { fontSize: moderateScale(50) },
   stageTextContainer: { flex: 1 },
-  labelExtraLarge: { fontSize: 28, fontWeight: '800', color: Theme.colors.primary, marginBottom: 6 },
-  stageSubtextLarge: { fontSize: 18, color: Theme.colors.textLight, fontWeight: '600' },
+  labelExtraLarge: { fontSize: moderateScale(28), fontWeight: '800', color: Theme.colors.primary, marginBottom: verticalScale(6) },
+  stageSubtextLarge: { fontSize: moderateScale(18), color: Theme.colors.textLight, fontWeight: '600' },
 
   circularDialContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: hp(4),
+    marginVertical: verticalScale(30),
     width: '100%',
-    height: width * 0.9
   },
   circularTrack: {
-    width: width * 0.85,
-    height: width * 0.85,
-    borderRadius: (width * 0.85) / 2,
     borderWidth: 4,
     borderColor: Theme.colors.softGreenBorder,
     justifyContent: 'center',
@@ -737,16 +916,10 @@ const styles = StyleSheet.create({
   },
   circularGlow: {
     position: 'absolute',
-    width: (width * 0.85) + 20,
-    height: (width * 0.85) + 20,
-    borderRadius: ((width * 0.85) + 20) / 2,
     backgroundColor: Theme.colors.secondary,
     opacity: 0.05
   },
   ringWrapperLarge: {
-    width: (width * 0.85) * 0.7,
-    height: (width * 0.85) * 0.7,
-    borderRadius: ((width * 0.85) * 0.7) / 2,
     backgroundColor: Theme.colors.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -760,22 +933,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   dialWeekNumLarge: {
-    fontSize: 90,
+    fontSize: moderateScale(90),
     fontWeight: '900',
     color: Theme.colors.primary,
-    lineHeight: 98
+    lineHeight: moderateScale(98)
   },
   dialWeekLabelLarge: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: '800',
     color: Theme.colors.textLight,
     letterSpacing: 2
   },
   dialHandle: {
     position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: scale(32),
+    height: scale(32),
+    borderRadius: scale(16),
     backgroundColor: Theme.colors.secondary,
     borderWidth: 4,
     borderColor: Theme.colors.white,
@@ -785,40 +958,40 @@ const styles = StyleSheet.create({
   },
   dialScaleContainer: {
     flexDirection: 'row',
-    width: width * 0.85,
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginTop: 10
+    paddingHorizontal: scale(20),
+    marginTop: verticalScale(10)
   },
   scaleText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '800',
     color: Theme.colors.textLight
   },
 
-  fieldLabel: { fontSize: 14, fontWeight: '700', color: Theme.colors.primary, marginBottom: 6, textAlign: 'center' },
-  form: { gap: 20 },
+  fieldLabel: { fontSize: moderateScale(14), fontWeight: '700', color: Theme.colors.primary, marginBottom: verticalScale(6), textAlign: 'center' },
+  form: { gap: verticalScale(14) },
   nameInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16
+    gap: scale(16),
+    marginBottom: -verticalScale(4)
   },
   bigBabyEmoji: {
-    fontSize: 60,
-    marginTop: 10
+    fontSize: moderateScale(50),
+    marginTop: verticalScale(10)
   },
   inputGroupFull: {
     flex: 1,
-    gap: 4
+    gap: verticalScale(4)
   },
   input: {
     backgroundColor: Theme.colors.white,
     borderWidth: 1.5,
     borderColor: Theme.colors.accent,
-    borderRadius: 15,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
+    borderRadius: moderateScale(15),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    fontSize: moderateScale(16),
     color: Theme.colors.primary,
     fontWeight: '600'
   },
@@ -827,122 +1000,110 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.white,
     borderWidth: 1.5,
     borderColor: Theme.colors.accent,
-    borderRadius: 15,
-    paddingVertical: 12,
+    borderRadius: moderateScale(15),
+    paddingVertical: verticalScale(12),
     alignItems: 'center',
     ...Theme.shadows.soft
   },
   sexEmoji: {
-    fontSize: 24,
-    marginBottom: 4
+    fontSize: moderateScale(24),
+    marginBottom: verticalScale(4)
   },
-  gridVertical: { gap: 16 },
+  gridVertical: { gap: verticalScale(16) },
   listItem: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Theme.colors.white,
-    padding: 32,
-    borderRadius: 24,
+    padding: moderateScale(32),
+    borderRadius: moderateScale(24),
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
     ...Theme.shadows.soft,
-    minHeight: hp(18)
+    minHeight: verticalScale(140)
   },
-  listItemLeading: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  labelLarge: { fontSize: 28, fontWeight: '800', color: Theme.colors.primary },
-  labelSubLarge: { fontSize: 18, color: Theme.colors.textLight, fontWeight: '600', marginTop: 4 },
-  emojiLarge: { fontSize: 54 },
-  emojiMedium: { fontSize: 34, marginRight: 12 },
-  labelExtraLarge: { fontSize: 28, fontWeight: '800', color: Theme.colors.primary },
+  listItemLeading: { flexDirection: 'row', alignItems: 'center', gap: scale(20) },
+  labelLarge: { fontSize: moderateScale(28), fontWeight: '800', color: Theme.colors.primary },
+  labelSubLarge: { fontSize: moderateScale(18), color: Theme.colors.textLight, fontWeight: '600', marginTop: verticalScale(4) },
+  emojiExtraLarge: { fontSize: moderateScale(50) },
+  emojiLarge: { fontSize: moderateScale(50) },
+  emojiMedium: { fontSize: moderateScale(34), marginRight: scale(12) },
 
-  splitLayout: { flexDirection: 'row', gap: 12, marginTop: hp(1) },
+  splitLayout: { flexDirection: 'row', gap: scale(12), marginTop: verticalScale(8) },
   leftCol: { width: '38%' },
-  rightCol: { flex: 1, gap: 12 },
-  compactWrapper: { width: '100%', marginBottom: hp(1) },
+  rightCol: { flex: 1, gap: scale(12) },
+  compactWrapper: { width: '100%', marginBottom: verticalScale(8) },
   compactCard: {
     backgroundColor: Theme.colors.white,
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: moderateScale(18),
+    padding: moderateScale(16),
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
     ...Theme.shadows.soft,
-    minHeight: hp(18)
+    minHeight: verticalScale(140)
   },
   compactCardSmall: {
     backgroundColor: Theme.colors.white,
-    borderRadius: 18,
-    padding: 8,
+    borderRadius: moderateScale(18),
+    padding: moderateScale(8),
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
     ...Theme.shadows.soft,
-    minHeight: hp(12)
+    minHeight: verticalScale(100)
   },
-  compactContent: { alignItems: 'center', justifyContent: 'center', gap: 2 },
-  emojiSmall: { fontSize: 34 },
-  labelMedium: { fontSize: 12, fontWeight: '900', color: Theme.colors.primary, textAlign: 'center' },
-  labelSubSmall: { fontSize: 12, color: Theme.colors.textLight, fontWeight: '700', textAlign: 'center', marginTop: 2, lineHeight: 10 },
-  labelSubLargeResponsive: { fontSize: 14, color: Theme.colors.textLight, fontWeight: '700', textAlign: 'center', marginTop: 2, lineHeight: 14 },
+  compactContent: { alignItems: 'center', justifyContent: 'center', gap: verticalScale(2) },
+  labelMedium: { fontSize: moderateScale(12), fontWeight: '900', color: Theme.colors.primary, textAlign: 'center' },
+  labelSubLargeResponsive: { fontSize: moderateScale(14), color: Theme.colors.textLight, fontWeight: '700', textAlign: 'center', marginTop: verticalScale(2), lineHeight: moderateScale(14) },
   subOptionSideItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Theme.colors.white,
-    padding: 18,
-    borderRadius: 24,
+    padding: moderateScale(18),
+    borderRadius: moderateScale(24),
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
     ...Theme.shadows.soft,
-    minHeight: hp(16)
+    minHeight: verticalScale(120)
   },
   subOptionSideItemSmall: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Theme.colors.white,
-    padding: 10,
-    borderRadius: 18,
+    padding: moderateScale(10),
+    borderRadius: moderateScale(18),
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
     ...Theme.shadows.soft,
-    minHeight: hp(10)
+    minHeight: verticalScale(80)
   },
   subOptionActive: {
     borderColor: Theme.colors.secondary,
     backgroundColor: Theme.colors.softGreen
   },
   subOptionSideLabel: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: '800',
     color: Theme.colors.primary,
-    marginBottom: 4
+    marginBottom: verticalScale(4)
   },
   subOptionSideSubLabel: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: Theme.colors.textLight,
     fontWeight: '600',
-    lineHeight: 16
+    lineHeight: moderateScale(16)
   },
 
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Theme.colors.primary,
-    marginBottom: 8,
-    marginTop: hp(2),
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    textAlign: 'center'
-  },
   sectionLabelSmall: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontWeight: '800',
     color: Theme.colors.primary,
-    marginBottom: 6,
-    marginTop: hp(0.5),
+    marginBottom: verticalScale(6),
+    marginTop: verticalScale(4),
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     textAlign: 'center'
@@ -950,8 +1111,8 @@ const styles = StyleSheet.create({
 
   chronosContainer: {
     backgroundColor: Theme.colors.white,
-    borderRadius: 20,
-    padding: 10,
+    borderRadius: moderateScale(20),
+    padding: moderateScale(10),
     borderWidth: 1.5,
     borderColor: Theme.colors.softGreenBorder,
     ...Theme.shadows.soft
@@ -960,19 +1121,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10
+    marginBottom: verticalScale(10)
   },
   timeLabelBox: { alignItems: 'center' },
-  timeLabelText: { fontSize: 8, fontWeight: '800', color: Theme.colors.textLight, letterSpacing: 1, marginBottom: 2 },
-  timeValueText: { fontSize: 14, fontWeight: '800', color: Theme.colors.primary },
-  timeValueTextActive: { fontSize: 14, fontWeight: '900', color: Theme.colors.secondary },
+  timeLabelText: { fontSize: moderateScale(8), fontWeight: '800', color: Theme.colors.textLight, letterSpacing: 1, marginBottom: verticalScale(2) },
+  timeValueText: { fontSize: moderateScale(14), fontWeight: '800', color: Theme.colors.primary },
+  timeValueTextActive: { fontSize: moderateScale(14), fontWeight: '900', color: Theme.colors.secondary },
   durationIndicator: { alignItems: 'center', flex: 1 },
   durationLine: { height: 1, backgroundColor: Theme.colors.softGreenBorder, width: '30%' },
-  durationText: { fontSize: 9, fontWeight: '900', color: Theme.colors.secondary, marginVertical: 2 },
+  durationText: { fontSize: moderateScale(9), fontWeight: '900', color: Theme.colors.secondary, marginVertical: verticalScale(2) },
 
   stripOuterWrapper: {
-    height: 55,
-    borderRadius: 12,
+    height: verticalScale(55),
+    borderRadius: moderateScale(12),
     backgroundColor: 'rgba(255,255,255,0.4)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
@@ -985,17 +1146,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
   },
-  stripItem: { width: 100, alignItems: 'center', justifyContent: 'center' },
-  stripTick: { width: 2, height: 10, backgroundColor: Theme.colors.accent, borderRadius: 1, marginBottom: 6 },
-  stripText: { fontSize: 11, fontWeight: '700' },
+  stripItem: { width: scale(100), alignItems: 'center', justifyContent: 'center' },
+  stripTick: { width: scale(2), height: verticalScale(10), backgroundColor: Theme.colors.accent, borderRadius: moderateScale(1), marginBottom: verticalScale(6) },
+  stripText: { fontSize: moderateScale(11), fontWeight: '700' },
   stripPointer: {
     position: 'absolute',
     alignSelf: 'center',
     top: 0,
-    width: 4,
+    width: scale(4),
     height: '100%',
     backgroundColor: Theme.colors.primary,
-    borderRadius: 2,
+    borderRadius: scale(2),
     opacity: 0.8,
     zIndex: 10
   },
@@ -1004,7 +1165,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 60,
+    width: scale(60),
     zIndex: 5
   },
   edgeGradientRight: {
@@ -1012,20 +1173,20 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    width: 60,
+    width: scale(60),
     zIndex: 5
   },
 
   nextBtn: {
     backgroundColor: Theme.colors.secondary,
-    paddingVertical: hp(1.6),
-    borderRadius: 30,
+    paddingVertical: verticalScale(16),
+    borderRadius: moderateScale(30),
     alignItems: 'center',
-    marginTop: hp(1.5),
+    marginTop: verticalScale(12),
     borderWidth: 1.5,
     borderColor: Theme.colors.primary,
     ...Theme.shadows.soft
   },
-  nextBtnTxt: { fontSize: hp(2.2), fontWeight: '900', color: Theme.colors.primary, letterSpacing: 1 },
+  nextBtnTxt: { fontSize: moderateScale(18), fontWeight: '900', color: Theme.colors.primary, letterSpacing: 1 },
   disabled: { opacity: 0.5 }
 });

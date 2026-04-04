@@ -31,16 +31,25 @@ interface ChildProfile {
 
 interface Task {
   title: string;
-  reason: string;
-  priority: 'high' | 'medium' | 'low';
+  reason?: string;
+  priority?: 'high' | 'medium' | 'low';
+  domain?: string;
+  description?: string;
+  tools?: string;
+  completed?: boolean;
+  session_min?: number;
+  session_max?: number;
 }
 
 interface GuidanceData {
   daily_tasks: Task[];
-  insight: string;
-  recommendation: string;
-  alert: boolean;
+  insight?: string;
+  recommendation?: string;
+  alert?: boolean;
   mode?: string;
+  task_completions?: string[];
+  week?: number;
+  completed_count?: number;
 }
 
 interface AIState {
@@ -56,6 +65,8 @@ interface AIState {
   fetchGuidance: (userId: string, profile: ChildProfile) => Promise<void>;
   streamGuidance: (userId: string, profile: ChildProfile, onUpdate: (data: Partial<GuidanceData>) => void) => Promise<void>;
   processChat: (userId: string, question: string, profile: ChildProfile, onToken: (token: string) => void) => Promise<void>;
+  fetchNurturePath: (userId: string) => Promise<void>;
+  toggleTaskCompletion: (userId: string, taskTitle: string, week: number) => Promise<void>;
   getStoredSessionId: (userId: string, childId: string) => Promise<string | null>;
   clearSession: (userId: string, childId: string) => Promise<void>;
 }
@@ -247,6 +258,44 @@ export const useAIStore = create<AIState>((set, get) => ({
       set({ error: "Could not connect to AI. Check your connection." });
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  fetchNurturePath: async (userId) => {
+    set({ isLoading: true });
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const res = await axios.get(`https://api.neevios.com/api/schedules/current`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      set({
+        guidanceData: {
+          daily_tasks: res.data.tasks,
+          week: res.data.week,
+          completed_count: res.data.completed_count
+        }
+      });
+    } catch (error) {
+      console.error("Fetch Nurture Path Error:", error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  toggleTaskCompletion: async (userId, taskTitle, week) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      await axios.post(`https://api.neevios.com/api/tasks/toggle`, {
+        activity_name: taskTitle,
+        week: week
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Refresh data after toggle
+      await get().fetchNurturePath(userId);
+    } catch (error) {
+      console.error("Toggle Task Error:", error);
     }
   }
 }));
