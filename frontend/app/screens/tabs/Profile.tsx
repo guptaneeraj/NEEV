@@ -20,9 +20,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const ROLE_EMOJIS: { [key: string]: string } = {
-  'Mother': '👩', 'Father': '👨', 'Grandmother': '👵', 'Grandfather': '👴',
-  'Guardian': '🛡️', 'Caregiver': '🤗', 'Aunt': '👩‍🦰', 'Uncle': '👨‍🦰',
-  'Foster Parent': '🏠', 'Adoptive Parent': '💝', 'Stepmother': '👩‍🦱', 'Stepfather': '👨‍🦱',
+  'mother': '👩', 'father': '👨', 'grandmother': '👵', 'grandfather': '👴',
+  'guardian': '🛡️', 'caregiver': '🤗', 'aunt': '👩‍🦰', 'uncle': '👨‍🦰',
+  'foster parent': '🏠', 'adoptive parent': '💝', 'stepmother': '👩‍🦱', 'stepfather': '👨‍🦱',
+  'parent': '👤'
 };
 
 // --- UNIQUE ANIMATION: Falling Petals (Top to Bottom) ---
@@ -111,7 +112,8 @@ export default function Profile() {
   ];
 
   const username = user?.full_name || 'Parent';
-  const roleEmoji = ROLE_EMOJIS[user?.relationship_type || ''] || '👤';
+  const relationshipType = (user?.relationship_type || '').toLowerCase();
+  const roleEmoji = ROLE_EMOJIS[relationshipType] || '👤';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

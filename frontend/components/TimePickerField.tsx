@@ -7,13 +7,14 @@ interface Props {
   label?: string;
   value?: string; // Expecting HH:MM AM/PM
   onChange?: (time: string) => void;
+  labelColor?: string;
 }
 
 const HOURS = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 const PERIODS = ["AM", "PM"];
 
-export default function TimePickerField({ label, value, onChange }: Props) {
+export default function TimePickerField({ label, value, onChange, labelColor }: Props) {
   const [hour, setHour] = useState('');
   const [minute, setMinute] = useState('');
   const [period, setPeriod] = useState('');
@@ -93,7 +94,7 @@ export default function TimePickerField({ label, value, onChange }: Props) {
 
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, labelColor ? { color: labelColor } : {}]}>{label}</Text>}
 
       <View style={styles.row}>
         <View style={{ flex: 1 }}>

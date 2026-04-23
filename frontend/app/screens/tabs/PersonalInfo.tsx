@@ -11,14 +11,18 @@ import { ProfileBackground } from './Profile';
 import AppEmoji from '../../../components/AppEmoji';
 
 const ROLE_EMOJIS: { [key: string]: string } = {
-  'Mother': '👩', 'Father': '👨', 'Grandmother': '👵', 'Grandfather': '👴',
-  'Guardian': '🛡️', 'Caregiver': '🤗', 'Aunt': '👩‍🦰', 'Uncle': '👨‍🦰',
-  'Foster Parent': '🏠', 'Adoptive Parent': '💝', 'Stepmother': '👩‍🦱', 'Stepfather': '👨‍🦱',
+  'mother': '👩', 'father': '👨', 'grandmother': '👵', 'grandfather': '👴',
+  'guardian': '🛡️', 'caregiver': '🤗', 'aunt': '👩‍🦰', 'uncle': '👨‍🦰',
+  'foster parent': '🏠', 'adoptive parent': '💝', 'stepmother': '👩‍🦱', 'stepfather': '👨‍🦱',
+  'parent': '👤'
 };
 
 export default function PersonalInfo() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+
+  const relationshipType = (user?.relationship_type || '').toLowerCase();
+  const roleEmoji = ROLE_EMOJIS[relationshipType] || '👤';
 
   const sections = [
     {
@@ -31,7 +35,7 @@ export default function PersonalInfo() {
     {
       label: 'JOURNEY ROLE',
       items: [
-        { label: 'Your Role', value: user?.relationship_type || 'Parent', icon: 'people', emoji: ROLE_EMOJIS[user?.relationship_type || ''] || '👤', color: '#FDE68A' },
+        { label: 'Your Role', value: user?.relationship_type || 'Parent', icon: 'people', emoji: roleEmoji, color: '#FDE68A' },
         { label: 'Preferred Stage', value: user?.stage === 'pregnancy' ? 'Pregnancy' : 'Parenting', icon: 'leaf', emoji: user?.stage === 'pregnancy' ? '🤰' : '🏡', color: '#2D5F3F' },
         { label: 'Activity Reminder', value: user?.preferred_activity_time || 'Not set', icon: 'time', emoji: '⏰', color: '#E07A5F' },
       ]
@@ -47,7 +51,28 @@ export default function PersonalInfo() {
           <Ionicons name="chevron-back" size={scale(28)} color={Theme.colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Parent Profile</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} style={styles.editBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Register', {
+            isEditMode: true,
+            prefill: {
+              firstName: user?.first_name,
+              lastName: user?.last_name,
+              userSex: user?.sex,
+              userDOB: user?.dob,
+              maritalStatus: user?.marital_status,
+              relationship: user?.role,
+              stage: user?.stage, // Ensure this is passed
+              diet_preference: user?.pregnancy_info?.diet_preference || user?.children?.[0]?.diet_preference,
+              planType: user?.children?.[0]?.preferred_plan,
+              childTimeOfBirth: user?.children?.[0]?.time_of_birth, // Fixed key name
+              childFirstName: user?.children?.[0]?.name?.split(' ')[0],
+              childLastName: user?.children?.[0]?.name?.split(' ')[1],
+              childDOB: user?.children?.[0]?.dob,
+              childSex: user?.children?.[0]?.sex,
+            }
+          })}
+          style={styles.editBtn}
+        >
           <Ionicons name="create-outline" size={scale(20)} color={Theme.colors.white} />
           <Text style={styles.editBtnText}>Edit</Text>
         </TouchableOpacity>
@@ -56,7 +81,7 @@ export default function PersonalInfo() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInUp.springify()} style={styles.heroSection}>
           <View style={styles.heroPetal}>
-            <AppEmoji style={styles.heroEmoji}>{ROLE_EMOJIS[user?.relationship_type || ''] || '👤'}</AppEmoji>
+            <AppEmoji style={styles.heroEmoji}>{ROLE_EMOJIS[relationshipType] || '👤'}</AppEmoji>
           </View>
           <Text style={styles.heroName}>{user?.full_name}</Text>
           <View style={styles.heroSubRow}>

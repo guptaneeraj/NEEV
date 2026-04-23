@@ -1,21 +1,21 @@
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 
-const defaultConfig = getDefaultConfig(__dirname);
-
+/**
+ * Metro configuration
+ * https://reactnative.dev/docs/metro
+ *
+ * @type {import('metro-config').MetroConfig}
+ */
 const config = {
-  ...defaultConfig,
   resolver: {
-    ...defaultConfig.resolver,
-    alias: {
-      ...defaultConfig.resolver.alias,
-    },
+    // Explicitly ignore android and ios build directories to prevent
+    // "Failed to start watch mode" errors on Windows during APK creation.
+    blockList: [
+      /.*\/android\/.*/,
+      /.*\/ios\/.*/,
+    ],
   },
-  transformer: {
-    ...defaultConfig.transformer,
-  },
-  serializer: {
-    ...defaultConfig.serializer,
-  },
+  maxWorkers: 2,
 };
 
-module.exports = mergeConfig(defaultConfig, config);
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);

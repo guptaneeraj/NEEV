@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,28 +7,37 @@ import {
   TouchableOpacity,
   ActivityIndicator
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { Theme } from '../../../constants/Theme';
 import { useAIStore } from '../../../store/useAIStore';
 import { useAuth } from '../../contexts/AuthContext';
-import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
+import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
 import Animated, { FadeInRight } from 'react-native-reanimated';
+import {
+  fetchActivities,
+  fetchRecentHistory,
+  generateDailyPlan,
+  getAgeGroup,
+  saveActivityToHistory,
+  fetchActivityLog
+} from '../../../services/DirectusApiClient';
 
 const ActivityCard = ({ activity, index, navigation, user }: { activity: any; index: number; navigation: any; user: any }) => {
   const getIcon = () => {
-    switch (activity.type) {
-      case 'Play': return 'tennisball-outline';
-      case 'Explore': return 'compass-outline';
-      case 'Read': return 'book-outline';
-      case 'View': return 'medkit-outline';
+    switch (activity.domain) {
+      case 'Gross Motor': return 'tennisball-outline';
+      case 'Cognitive': return 'compass-outline';
+      case 'Language': return 'book-outline';
+      case 'Sensory': return 'medkit-outline';
       default: return 'sparkles-outline';
     }
   };
 
   const getActionLabel = () => {
-    return activity.type || 'Explore';
+    return activity.domain || 'Explore';
   };
 
   const handlePress = () => {
@@ -38,35 +47,58 @@ const ActivityCard = ({ activity, index, navigation, user }: { activity: any; in
     });
   };
 
+  const [completed, setCompleted] = useState(false);
+
+  const handleComplete = async () => {
+    try {
+      const userId = user?.id || user?.user_id;
+      await saveActivityToHistory(String(userId), String(activity.id), 'Nurture Hub');
+      setCompleted(true);
+    } catch (e) {
+      console.error("Failed to save activity history", e);
+    }
+  };
+
   return (
     <Animated.View
       entering={FadeInRight.delay(index * 100).duration(500)}
-      style={styles.card}
+      style={[styles.card, completed && { opacity: 0.6 }]}
     >
-      {activity.isRecommended && (
-        <View style={styles.recommendedBadge}>
-          <Text style={styles.recommendedText}>RECOMMENDED FOR TODAY</Text>
-        </View>
-      )}
-
       <View style={styles.cardContent}>
         <View style={styles.iconContainer}>
           <Ionicons name={getIcon()} size={moderateScale(28)} color={Theme.colors.primary} />
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={styles.activityTitle}>{activity.title}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+             <Text style={styles.activityTitle}>{activity.activity}</Text>
+             {completed && <Ionicons name="checkmark-circle" size={20} color={Theme.colors.secondary} />}
+          </View>
           <Text style={styles.benefitText}>{activity.description}</Text>
+          <Text style={{ fontSize: 11, color: Theme.colors.textLight, marginTop: 4 }}>
+            {activity.duration_mins} mins • {activity.energy_level}
+          </Text>
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={handlePress}
-      >
-        <Text style={styles.actionButtonText}>{getActionLabel()} </Text>
-        <Ionicons name="chevron-forward" size={moderateScale(16)} color={Theme.colors.primary} />
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <TouchableOpacity
+          style={[styles.actionButton, { flex: 1 }]}
+          onPress={handlePress}
+        >
+          <Text style={styles.actionButtonText}>{getActionLabel()} </Text>
+          <Ionicons name="chevron-forward" size={moderateScale(16)} color={Theme.colors.primary} />
+        </TouchableOpacity>
+
+        {!completed && (
+          <TouchableOpacity
+            style={[styles.actionButton, { width: scale(50), backgroundColor: Theme.colors.accent }]}
+            onPress={handleComplete}
+          >
+            <Ionicons name="checkmark" size={moderateScale(20)} color={Theme.colors.primary} />
+          </TouchableOpacity>
+        )}
+      </View>
     </Animated.View>
   );
 };
@@ -74,17 +106,127 @@ const ActivityCard = ({ activity, index, navigation, user }: { activity: any; in
 export default function Plan() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
-  const { guidanceData, isLoading } = useAIStore();
+  const [dailyActivities, setDailyActivities] = useState<any[]>([]);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [activityLog, setActivityLog] = useState<any[]>([]);
+  const [logLoading, setLogLoading] = useState(false);
 
-  const activities = guidanceData?.daily_tasks?.length > 0 ? guidanceData.daily_tasks : [
-    { title: "Mirror Play", description: "Develops self-recognition & social skills", type: "Play", isRecommended: true, completed: true },
-    { title: "Texture Discovery", description: "Enhances tactile sensory processing", type: "Explore", isRecommended: true, completed: true },
-    { title: "Bedtime Rhythms", description: "Improves language acquisition", type: "Read", completed: true },
-    { title: "Outdoor Breeze", description: "Calms nervous system", type: "Explore", completed: false },
-    { title: "Vitamin D Check", description: "Ensures bone health", type: "View", completed: false },
-  ];
+  const loadActivityLog = async () => {
+    setLogLoading(true);
+    try {
+      const userId = user?.id || user?.user_id;
+      const log = await fetchActivityLog(userId, 7);
+      setActivityLog(log);
+    } catch (e) {} finally {
+      setLogLoading(false);
+    }
+  };
 
-  const completedCount = activities.filter(a => a.completed).length;
+  useEffect(() => {
+    const loadPlan = async () => {
+      try {
+        setPlanLoading(true);
+
+        const CACHE_KEY = 'daily_plan_cache';
+        const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+        const cached = await AsyncStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { plan, timestamp, ageGroup: cachedAgeGroup } = JSON.parse(cached);
+          const age = Date.now() - timestamp;
+          if (age < CACHE_DURATION) {
+            setDailyActivities(plan);
+            setPlanLoading(false);
+            loadActivityLog();
+            return;
+          }
+        }
+
+        // Get child data from store
+        const state = useAIStore.getState();
+        const selectedChildId = state.selectedChildId;
+        const childData = state.children.find(c => String(c.id) === String(selectedChildId)) || state.children[0];
+        const userData = user;
+
+        if (!childData?.dob && !childData?.date_of_birth) {
+          setPlanLoading(false);
+          return;
+        }
+
+        const dob = childData.dob || childData.date_of_birth;
+        const ageGroup = getAgeGroup(dob);
+
+        // Log previous plan activities as missed if not completed
+        if (cached) {
+          const { plan: oldPlan } = JSON.parse(cached);
+          const userId = user?.id || user?.user_id;
+          const completedIds = await fetchRecentHistory(userId)
+            .then(h => h
+              .filter((i: any) => i.status === 'completed')
+              .map((i: any) => String(i.activity_id))
+            )
+            .catch(() => []);
+
+          for (const activity of oldPlan) {
+            if (!completedIds.includes(String(activity.id))) {
+              await saveActivityToHistory(
+                userId,
+                String(activity.id),
+                'missed'
+              ).catch(() => {});
+            }
+          }
+        }
+
+        // Get plan duration from user preference
+        const planDurationMap: Record<string, number> = {
+          '20_min_plan': 20,
+          '40_min_plan': 40,
+          '60_min_plan': 60
+        };
+        const planDuration = planDurationMap[userData?.preferred_plan_type] || 40;
+
+        // Fetch from Directus
+        const userId = userData?.id || userData?.user_id;
+        const [activities, history] = await Promise.all([
+          fetchActivities(ageGroup),
+          fetchRecentHistory(String(userId))
+        ]);
+
+        const recentIds = history.map((h: any) => String(h.activity_id));
+        const recentDomains = history
+          .slice(0, 10)
+          .map((h: any) => h.domain)
+          .filter(Boolean);
+
+        const plan = generateDailyPlan(
+          activities,
+          ageGroup,
+          planDuration,
+          recentIds,
+          recentDomains
+        );
+
+        // After generating new plan, save to cache:
+        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({
+          plan: plan,
+          timestamp: Date.now(),
+          ageGroup: ageGroup
+        }));
+
+        setDailyActivities(plan);
+        loadActivityLog();
+      } catch (error) {
+        console.error('Failed to load daily plan:', error);
+      } finally {
+        setPlanLoading(false);
+      }
+    };
+
+    loadPlan();
+  }, [user]);
+
+  const completedCount = dailyActivities.filter(a => a.completed).length;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -94,7 +236,7 @@ export default function Plan() {
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Weekly Journey</Text>
-          <Text style={styles.headerSubtitle}>Week 12 • Sensory Discovery</Text>
+          <Text style={styles.headerSubtitle}>Daily Curated Plan</Text>
         </View>
         <View style={{ width: scale(40) }} />
       </View>
@@ -105,28 +247,67 @@ export default function Plan() {
       >
         <View style={styles.progressSection}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>Your Progress</Text>
-            <Text style={styles.progressValue}>{completedCount}/{activities.length} completed</Text>
+            <Text style={styles.progressLabel}>Today's Goals</Text>
+            <Text style={styles.progressValue}>{dailyActivities.length} activities</Text>
           </View>
           <View style={styles.progressBarBg}>
             <View
               style={[
                 styles.progressBarFill,
-                { width: `${(completedCount / activities.length) * 100}%` }
+                { width: '100%' }
               ]}
             />
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>This Week's Journey</Text>
+        <Text style={styles.sectionTitle}>Your Daily Plan</Text>
 
-        {isLoading && guidanceData?.daily_tasks?.length === 0 ? (
+        {planLoading ? (
           <ActivityIndicator color={Theme.colors.primary} style={{ marginTop: verticalScale(40) }} />
         ) : (
-          activities.map((activity, index) => (
+          dailyActivities.map((activity, index) => (
             <ActivityCard key={index} activity={activity} index={index} navigation={navigation} user={user} />
           ))
         )}
+
+        <View style={styles.logSection}>
+          <Text style={styles.sectionTitle}>Activity Log</Text>
+          {logLoading ? (
+            <ActivityIndicator color={Theme.colors.primary} />
+          ) : (
+            activityLog.map((item, idx) => (
+              <View key={idx} style={styles.logItem}>
+                <View style={styles.logInfo}>
+                  <Text style={styles.logId}>Activity #{item.activity_id}</Text>
+                  <Text style={styles.logDate}>
+                    {new Date(item.completed_at).toLocaleString()}
+                  </Text>
+                </View>
+                <View style={styles.logStatusContainer}>
+                  <View style={[
+                    styles.statusBadge,
+                    item.status === 'completed' ? styles.statusGreen :
+                    item.status === 'missed' ? styles.statusRed : styles.statusGrey
+                  ]}>
+                    <Text style={styles.statusText}>{item.status}</Text>
+                  </View>
+                  {item.status === 'missed' && (
+                    <TouchableOpacity
+                      onPress={async () => {
+                        const userId = user?.id || user?.user_id;
+                        await saveActivityToHistory(userId, item.activity_id, 'Nurture Hub');
+                        loadActivityLog();
+                      }}
+                      style={styles.markCompleteBtn}
+                    >
+                      <Text style={styles.markCompleteText}>Mark Complete</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
 
         <View style={styles.footerSpacer} />
       </ScrollView>
@@ -182,17 +363,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Theme.colors.accent
   },
-  recommendedBadge: {
-    backgroundColor: Theme.colors.softGreen,
-    paddingHorizontal: scale(10),
-    paddingVertical: verticalScale(4),
-    borderRadius: moderateScale(8),
-    alignSelf: 'flex-start',
-    marginBottom: verticalScale(12),
-    borderWidth: 1,
-    borderColor: Theme.colors.softGreenBorder
-  },
-  recommendedText: { fontSize: moderateScale(11), fontWeight: '800', color: Theme.colors.primary },
   cardContent: { flexDirection: 'row', alignItems: 'center', marginBottom: verticalScale(16) },
   iconContainer: {
     width: scale(56),
@@ -221,4 +391,36 @@ const styles = StyleSheet.create({
   },
   actionButtonText: { color: Theme.colors.primary, fontSize: moderateScale(14), fontWeight: '700' },
   footerSpacer: { height: verticalScale(40) },
+  logSection: { marginTop: verticalScale(30) },
+  logItem: {
+    backgroundColor: Theme.colors.white,
+    padding: moderateScale(15),
+    borderRadius: moderateScale(15),
+    marginBottom: verticalScale(10),
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    ...Theme.shadows.soft
+  },
+  logInfo: { flex: 1 },
+  logId: { fontSize: moderateScale(14), fontWeight: '700', color: Theme.colors.primary },
+  logDate: { fontSize: moderateScale(12), color: Theme.colors.textLight },
+  logStatusContainer: { alignItems: 'flex-end' },
+  statusBadge: {
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(8),
+    marginBottom: verticalScale(4)
+  },
+  statusGreen: { backgroundColor: '#D1FAE5' },
+  statusRed: { backgroundColor: '#FEE2E2' },
+  statusGrey: { backgroundColor: '#F3F4F6' },
+  statusText: { fontSize: moderateScale(10), fontWeight: '700', textTransform: 'capitalize' },
+  markCompleteBtn: {
+    backgroundColor: Theme.colors.primary,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(6)
+  },
+  markCompleteText: { color: 'white', fontSize: moderateScale(10), fontWeight: '700' }
 });

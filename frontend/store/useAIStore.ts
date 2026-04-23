@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as directusService from '../services/DirectusApiClient';
 
 export const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -9,7 +10,9 @@ export const generateUUID = () => {
   });
 };
 
-const AI_API_URL = "https://ai.neevios.com";
+import { BACKEND_URL, DIRECTUS_URL, DIRECTUS_TOKEN } from '@env';
+
+const AI_API_URL = BACKEND_URL;
 
 interface ChildProfile {
   full_name?: string;
@@ -23,6 +26,7 @@ interface ChildProfile {
   preferred_activity_time?: string;
   stage?: string;
   current_week?: number;
+  child_age_months?: number;
   mood_logs?: any[];
   health_records?: any[];
   task_completions?: string[];
@@ -54,30 +58,93 @@ interface GuidanceData {
 
 interface AIState {
   children: any[];
+  mood_logs: any[];
+  health_records: any[];
+  check_ins: any[];
   selectedChildId: string | null;
   guidanceData: GuidanceData | null;
   isLoading: boolean;
   lastResponse: string | null;
   error: string | null;
 
+  buildRichProfile: (userId: string, profile: ChildProfile) => Promise<ChildProfile>;
   setSelectedChildId: (userId: string, childId: string, isAnother?: boolean) => Promise<void>;
   fetchChildren: (userId: string, forceRefresh?: boolean) => Promise<void>;
+  fetchCheckIns: (userId: string) => Promise<void>;
   fetchGuidance: (userId: string, profile: ChildProfile) => Promise<void>;
   streamGuidance: (userId: string, profile: ChildProfile, onUpdate: (data: Partial<GuidanceData>) => void) => Promise<void>;
   processChat: (userId: string, question: string, profile: ChildProfile, onToken: (token: string) => void) => Promise<void>;
-  fetchNurturePath: (userId: string) => Promise<void>;
-  toggleTaskCompletion: (userId: string, taskTitle: string, week: number) => Promise<void>;
   getStoredSessionId: (userId: string, childId: string) => Promise<string | null>;
   clearSession: (userId: string, childId: string) => Promise<void>;
 }
 
 export const useAIStore = create<AIState>((set, get) => ({
   children: [],
+  mood_logs: [],
+  health_records: [],
+  check_ins: [],
   selectedChildId: null,
   guidanceData: null,
   isLoading: false,
   lastResponse: null,
   error: null,
+
+  buildRichProfile: async (userId, profile) => {
+    const CACHE_KEY = `rich_profile_${userId}`;
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+    try {
+      const cached = await AsyncStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_TTL) {
+          // Merge cached data with provided profile
+          return { ...profile, ...data };
+        }
+      }
+    } catch (e) {}
+
+    const enriched = { ...profile };
+
+    if (profile.child_dob) {
+      try {
+        const dob = new Date(profile.child_dob);
+        const now = new Date();
+        enriched.child_age_months = (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
+      } catch (e) {}
+    }
+
+    try {
+      const response = await axios.get(
+        `${DIRECTUS_URL}/items/user_activity_history`,
+        {
+          headers: { Authorization: `Bearer ${DIRECTUS_TOKEN}` },
+          params: {
+            filter: { user_id: { _eq: userId } },
+            fields: 'activity_id,completed_at',
+            limit: 50,
+            sort: '-completed_at'
+          }
+        }
+      );
+      enriched.task_completions = response.data.data.map((item: any) => item.activity_id.toString());
+    } catch (error) {}
+
+    const state = get();
+    if (state.mood_logs?.length) enriched.mood_logs = state.mood_logs;
+    if (state.health_records?.length) enriched.health_records = state.health_records;
+    if (state.check_ins?.length) enriched.check_ins = state.check_ins;
+
+    // Save to cache
+    try {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: enriched,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+
+    return enriched;
+  },
 
   getStoredSessionId: async (userId, childId) => {
     const key = `neev_session_${userId}_${childId}`;
@@ -100,20 +167,34 @@ export const useAIStore = create<AIState>((set, get) => ({
     if (get().children.length > 0 && !forceRefresh) return;
 
     try {
-      const res = await axios.post(`${AI_API_URL}/children/list`, { user_id: userId });
-      set({ children: res.data.children || [] });
+      const data = await directusService.fetchChildren(parseInt(userId));
+      const formatted = data.map((c: any) => ({
+        ...c,
+        session_id: c.id?.toString()
+      }));
+
+      set({ children: formatted || [] });
 
       const activeId = await AsyncStorage.getItem(`neev_active_session_${userId}`);
       if (activeId) {
         set({ selectedChildId: activeId });
-      } else if (res.data.children?.length > 0) {
-        const firstChildId = res.data.children[0].session_id || res.data.children[0].id?.toString();
+      } else if (formatted?.length > 0) {
+        const firstChildId = formatted[0].session_id || formatted[0].id?.toString();
         if (firstChildId) {
           await get().setSelectedChildId(userId, firstChildId);
         }
       }
     } catch (error) {
-      console.error("Error fetching children:", error);
+      console.error("Error fetching children from Directus:", error);
+    }
+  },
+
+  fetchCheckIns: async (userId) => {
+    try {
+      const data = await directusService.fetchCheckIns(parseInt(userId));
+      set({ check_ins: data || [] });
+    } catch (error) {
+      console.error("Error fetching check-ins:", error);
     }
   },
 
@@ -123,10 +204,26 @@ export const useAIStore = create<AIState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      const enrichedProfile = await get().buildRichProfile(userId, profile);
+
+      const allowedFields = [
+        'full_name', 'relationship_type', 'child_name',
+        'child_dob', 'child_sex', 'diet_preference',
+        'preferred_plan_type', 'preferred_time_of_day',
+        'preferred_activity_time', 'stage', 'current_week',
+        'child_age_months', 'mood_logs', 'health_records',
+        'task_completions', 'check_ins'
+      ];
+      const sanitizedProfile = Object.fromEntries(
+        Object.entries(enrichedProfile)
+          .filter(([k, v]) => allowedFields.includes(k) && v !== null && v !== undefined)
+          .map(([k, v]) => (k === 'child_age_months' ? [k, Math.floor(Number(v))] : [k, v]))
+      );
+
       const res = await axios.post(`${AI_API_URL}/ai/guidance`, {
         session_id: sessionId || null,
         user_id: userId,
-        child_profile: profile
+        child_profile: sanitizedProfile
       });
       set({ guidanceData: res.data });
     } catch (error: any) {
@@ -147,18 +244,38 @@ export const useAIStore = create<AIState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      const enrichedProfile = await get().buildRichProfile(userId, profile);
+
+      const allowedFields = [
+        'full_name', 'relationship_type', 'child_name',
+        'child_dob', 'child_sex', 'diet_preference',
+        'preferred_plan_type', 'preferred_time_of_day',
+        'preferred_activity_time', 'stage', 'current_week',
+        'child_age_months', 'mood_logs', 'health_records',
+        'task_completions', 'check_ins'
+      ];
+      const sanitizedProfile = Object.fromEntries(
+        Object.entries(enrichedProfile)
+          .filter(([k, v]) => allowedFields.includes(k) && v !== null && v !== undefined)
+          .map(([k, v]) => (k === 'child_age_months' ? [k, Math.floor(Number(v))] : [k, v]))
+      );
+
       const response = await fetch(`${AI_API_URL}/ai/guidance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: sessionId || null,
-          user_id: userId,
-          child_profile: profile,
+          user_id: String(userId),
+          child_profile: sanitizedProfile,
           stream: true
         })
       });
 
-      if (!response.ok) throw new Error("Guidance stream failed");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Guidance stream error details:", errorText);
+        throw new Error("Guidance stream failed");
+      }
 
       const reader = response.body?.getReader();
       if (!reader) return;
@@ -169,7 +286,18 @@ export const useAIStore = create<AIState>((set, get) => ({
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+
+        if (done) {
+          // Process final remaining buffer content
+          if (lineBuffer.trim()) {
+            try {
+              const data = JSON.parse(lineBuffer.trim());
+              currentData = { ...currentData, ...data };
+              set({ guidanceData: currentData as GuidanceData });
+            } catch (e) {}
+          }
+          break;
+        }
 
         lineBuffer += decoder.decode(value, { stream: true });
         const lines = lineBuffer.split('\n');
@@ -204,6 +332,7 @@ export const useAIStore = create<AIState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      const enrichedProfile = await get().buildRichProfile(userId, profile);
       const response = await fetch(`${AI_API_URL}/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +340,7 @@ export const useAIStore = create<AIState>((set, get) => ({
           question,
           session_id: sessionId,
           user_id: userId,
-          child_profile: profile
+          child_profile: enrichedProfile
         })
       });
 
@@ -258,44 +387,6 @@ export const useAIStore = create<AIState>((set, get) => ({
       set({ error: "Could not connect to AI. Check your connection." });
     } finally {
       set({ isLoading: false });
-    }
-  },
-
-  fetchNurturePath: async (userId) => {
-    set({ isLoading: true });
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      const res = await axios.get(`https://api.neevios.com/api/schedules/current`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      set({
-        guidanceData: {
-          daily_tasks: res.data.tasks,
-          week: res.data.week,
-          completed_count: res.data.completed_count
-        }
-      });
-    } catch (error) {
-      console.error("Fetch Nurture Path Error:", error);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  toggleTaskCompletion: async (userId, taskTitle, week) => {
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      await axios.post(`https://api.neevios.com/api/tasks/toggle`, {
-        activity_name: taskTitle,
-        week: week
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      // Refresh data after toggle
-      await get().fetchNurturePath(userId);
-    } catch (error) {
-      console.error("Toggle Task Error:", error);
     }
   }
 }));

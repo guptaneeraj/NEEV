@@ -12,11 +12,12 @@ import {
   Alert,
   ActivityIndicator,
   Vibration,
+  BackHandler,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
+import * as directusService from '../../../services/DirectusApiClient';
 import { Theme } from '../../../constants/Theme';
 import DatePickerField from '../../../components/DatePickerField';
 import AppEmoji from '../../../components/AppEmoji';
@@ -91,8 +92,6 @@ const TIME_WINDOW_OPTIONS = [
   { label: 'Afternoon', value: 'afternoon', icon: '☀️', range: { start: 12, end: 17 }, subLabel: 'Reconnect mid-day.' },
   { label: 'Night', value: 'night', icon: '🌙', range: { start: 18, end: 23 }, subLabel: 'Calm before rest.' },
 ];
-
-const API_URL = "https://api.neevios.com";
 
 const CircularWeekDial = ({ currentWeek, onWeekChange }: { currentWeek: number, onWeekChange: (week: number) => void }) => {
   const rotation = useSharedValue(0);
@@ -288,10 +287,27 @@ const StepHeader = memo(({ title, subtitle }: { title: string, subtitle: string 
 
 export default function Register() {
   const navigation = useNavigation<any>();
-  const { token, fetchProfile } = useAuth();
+  const route = useRoute();
+  const { isEditMode, prefill } = (route.params as any) || {};
+
+  const { user, fetchProfile } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
+
+  useEffect(() => {
+    const backAction = () => {
+      handleBack();
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [step, isEditMode]);
 
   // Registration State
   const [firstName, setFirstName] = useState('');
@@ -312,6 +328,50 @@ export default function Register() {
   const [planType, setPlanType] = useState('');
   const [timeOfDay, setTimeOfDay] = useState('');
   const [specificTime, setSpecificTime] = useState('');
+
+  useEffect(() => {
+    if (isEditMode && prefill) {
+      if (prefill.firstName) setFirstName(prefill.firstName);
+      if (prefill.lastName) setLastName(prefill.lastName);
+      if (prefill.userSex) setUserSex(prefill.userSex);
+
+      // Sanitize DOB to YYYY-MM-DD
+      if (prefill.userDOB) {
+        const dobStr = prefill.userDOB.split('T')[0];
+        setUserDOB(dobStr);
+      }
+
+      if (prefill.maritalStatus) setMaritalStatus(prefill.maritalStatus);
+      if (prefill.relationship) setRelationship(prefill.relationship);
+      if (prefill.stage) setStage(prefill.stage);
+      if (prefill.pregnancyWeek) setPregnancyWeek(prefill.pregnancyWeek);
+      if (prefill.childFirstName) setChildFirstName(prefill.childFirstName);
+      if (prefill.childLastName) setChildLastName(prefill.childLastName);
+
+      if (prefill.childDOB) {
+        const cDobStr = prefill.childDOB.split('T')[0];
+        setChildDOB(cDobStr);
+      }
+
+      if (prefill.childTimeOfBirth) setChildTimeOfBirth(prefill.childTimeOfBirth);
+      if (prefill.childSex) setChildSex(prefill.childSex);
+
+      // Handle Food Philosophy parsing (e.g., "Vegetarian - Standard Veg")
+      if (prefill.diet_preference) {
+        const parts = prefill.diet_preference.split(' - ');
+        if (parts.length === 2) {
+          setDiet(parts[0]);
+          setSubDiet(parts[1]);
+        } else {
+          setDiet(prefill.diet_preference);
+        }
+      }
+
+      if (prefill.planType) setPlanType(prefill.planType);
+      if (prefill.timeOfDay) setTimeOfDay(prefill.timeOfDay);
+      if (prefill.specificTime) setSpecificTime(prefill.specificTime);
+    }
+  }, [prefill, isEditMode]);
 
   const showAlert = (title: string, message: string, icon: string = '⚠️') => {
     setModalConfig({ title, message, icon });
@@ -334,7 +394,7 @@ export default function Register() {
       }
     }
     if (step === 5 && (!diet || !subDiet)) return showAlert('Wait', 'Select your food philosophy', '🥗');
-    if (step === 6 && (!planType || !timeOfDay || !specificTime)) return showAlert('Wait', 'Complete your daily commitment', '⏰');
+    if (step === 6 && !planType) return showAlert('Wait', 'Complete your daily commitment', '⏰');
 
     if (step === 6) {
       handleSubmit();
@@ -344,46 +404,57 @@ export default function Register() {
   };
 
   const handleSubmit = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
       const finalDiet = `${diet} - ${subDiet}`;
 
-      await axios.patch(`${API_URL}/api/user/update`, {
+      await directusService.updateUser(user.id, {
         first_name: firstName,
         last_name: lastName,
         sex: userSex,
         dob: userDOB,
         marital_status: maritalStatus,
-        full_name: `${firstName} ${lastName}`,
-        relationship_type: relationship,
-        preferred_plan_type: planType,
-        preferred_time_of_day: timeOfDay,
-        preferred_activity_time: specificTime,
+        full_name: `${firstName} ${lastName}`.trim() || relationship,
+        role: relationship,
+        current_week: stage === 'pregnancy' ? pregnancyWeek : null,
         stage: stage,
         onboarding_complete: true
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
 
       if (stage === 'pregnancy') {
-        await axios.post(`${API_URL}/api/user/pregnancy`, {
-          pregnant_person_name: 'Self',
-          is_user_pregnant: true,
-          relationship_to_pregnant: 'Self',
-          current_week: pregnancyWeek,
+        const pregInfo = {
+          user_id: user.id,
           diet_preference: finalDiet
-        }, { headers: { Authorization: `Bearer ${token}` } });
+        };
+
+        if (isEditMode && user?.pregnancy_info?.id) {
+          await directusService.updatePregnancyInfo(user.pregnancy_info.id, pregInfo);
+        } else {
+          await directusService.savePregnancyInfo(pregInfo);
+        }
       } else {
-        await axios.post(`${API_URL}/api/user/child`, {
-          first_name: childFirstName,
-          last_name: childLastName,
+        const childInfo = {
+          user_id: user.id,
+          name: `${childFirstName} ${childLastName}`,
           dob: childDOB,
           time_of_birth: childTimeOfBirth,
           sex: childSex,
-          diet_preference: finalDiet
-        }, { headers: { Authorization: `Bearer ${token}` } });
+          diet_preference: finalDiet,
+          preferred_plan: planType,
+          time_of_day: timeOfDay,
+          base_wake_window_minutes: PLAN_OPTIONS.find(o => o.value === planType)?.duration || 20
+        };
+
+        if (isEditMode && user?.children?.[0]?.id) {
+          await directusService.updateChild(user.children[0].id, childInfo);
+        } else {
+          await directusService.createChild(childInfo);
+        }
       }
 
       await fetchProfile();
-      navigation.replace('Home');
+      isEditMode ? navigation.goBack() : navigation.replace('Home');
     } catch (error: any) {
       showAlert('Setup Failed', 'We couldn\'t save your preferences. Please check your connection.', '❌');
     } finally {
@@ -395,7 +466,11 @@ export default function Register() {
     if (step > 1) {
       setStep(step - 1);
     } else {
-      setShowExitModal(true);
+      if (isEditMode) {
+        navigation.goBack();
+      } else {
+        setShowExitModal(true);
+      }
     }
   };
 
@@ -433,7 +508,7 @@ export default function Register() {
 
             {step === 1 && (
               <View style={styles.stepOneContainer}>
-                <StepHeader title="Tell Us About You" subtitle="Let's start by getting to know you better" />
+                <StepHeader title={isEditMode ? 'Update Your Profile' : 'Tell Us About You'} subtitle="Let's start by getting to know you better" />
                 <View style={[styles.form, { gap: verticalScale(14) }]}>
                   <View style={styles.row}>
                     <View style={styles.inputGroupFull}>
@@ -536,7 +611,9 @@ export default function Register() {
                         <Text style={styles.stageSubtextLarge}>I'm on my wonderful pregnancy journey</Text>
                       </View>
                       {stage === 'pregnancy' && (
-                        <Ionicons name="checkmark-circle" size={moderateScale(28)} color={Theme.colors.secondary} />
+                        <View style={styles.checkBadge}>
+                           <Ionicons name="checkmark-circle" size={moderateScale(28)} color={Theme.colors.secondary} />
+                        </View>
                       )}
                     </TouchableOpacity>
                   </Animated.View>
@@ -554,7 +631,9 @@ export default function Register() {
                         <Text style={styles.stageSubtextLarge}>My child is already here and exploring the world</Text>
                       </View>
                       {stage === 'child' && (
-                        <Ionicons name="checkmark-circle" size={moderateScale(28)} color={Theme.colors.secondary} />
+                        <View style={styles.checkBadge}>
+                           <Ionicons name="checkmark-circle" size={moderateScale(28)} color={Theme.colors.secondary} />
+                        </View>
                       )}
                     </TouchableOpacity>
                   </Animated.View>
@@ -685,59 +764,20 @@ export default function Register() {
             {step === 6 && (
               <View>
                 <StepHeader title="Daily Commitment" subtitle="Design a pace that flows naturally with your lifestyle." />
-                <View style={styles.splitLayout}>
-                  <View style={styles.leftCol}>
-                    {PLAN_OPTIONS.map((p, i) => (
-                      <Animated.View
-                        key={p.value}
-                        layout={Layout.springify()}
-                        style={styles.compactWrapper}
-                      >
-                        <TouchableOpacity
-                          style={[styles.compactCardSmall, planType === p.value && styles.cardActive]}
-                          onPress={() => setPlanType(p.value)}
-                        >
-                          <View style={styles.compactContent}>
-                            <AppEmoji style={styles.emojiMedium}>{p.icon}</AppEmoji>
-                            <View style={{ alignItems: 'center' }}>
-                              <Text style={styles.labelMedium}>{p.label}</Text>
-                              <Text style={styles.labelSubLargeResponsive}>{p.subLabel}</Text>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      </Animated.View>
-                    ))}
-                  </View>
-
-                  <View style={styles.rightCol}>
-                    {TIME_WINDOW_OPTIONS.map((t, i) => (
+                <View style={styles.gridStep1}>
+                  {PLAN_OPTIONS.map((p, i) => (
+                    <Animated.View key={p.value} entering={FadeInRight.delay(i * 100)} style={styles.gridItemStep1}>
                       <TouchableOpacity
-                        key={t.value}
-                        style={[styles.subOptionSideItemSmall, timeOfDay === t.value && styles.subOptionActive]}
-                        onPress={() => { setTimeOfDay(t.value); setSpecificTime(''); }}
+                        style={[styles.cardStep1, planType === p.value && styles.cardActive]}
+                        onPress={() => setPlanType(p.value)}
                       >
-                        <AppEmoji style={styles.emojiLarge}>{t.icon}</AppEmoji>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.subOptionSideLabel}>{t.label}</Text>
-                          <Text style={styles.subOptionSideSubLabel}>{t.subLabel}</Text>
-                        </View>
-                        {timeOfDay === t.value && <Ionicons name="checkmark-circle" size={moderateScale(20)} color={Theme.colors.secondary} />}
+                        <Text style={{ fontSize: scale(32), marginBottom: 8 }}>{p.icon}</Text>
+                        <Text style={styles.labelStep1}>{p.label}</Text>
+                        <Text style={{ fontSize: scale(10), color: Theme.colors.textLight, textAlign: 'center' }}>{p.subLabel}</Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
+                    </Animated.View>
+                  ))}
                 </View>
-
-                {timeOfDay && planType && (
-                  <Animated.View entering={FadeInUp} style={{ marginTop: verticalScale(8) }}>
-                    <Text style={styles.sectionLabelSmall}>Set Your Moment</Text>
-                    <ChronosStrip
-                      range={TIME_WINDOW_OPTIONS.find(o => o.value === timeOfDay)!.range}
-                      duration={PLAN_OPTIONS.find(o => o.value === planType)!.duration}
-                      selectedTime={specificTime}
-                      onTimeChange={setSpecificTime}
-                    />
-                  </Animated.View>
-                )}
               </View>
             )}
 
@@ -827,6 +867,12 @@ const styles = StyleSheet.create({
   labelStep1: { fontSize: moderateScale(12), color: Theme.colors.primary, textAlign: 'center', fontWeight: '800' },
   label: { fontSize: moderateScale(13), color: Theme.colors.primary, textAlign: 'center', fontWeight: '700' },
   labelActive: { color: Theme.colors.primary },
+  checkBadge: {
+    position: 'absolute',
+    top: scale(10),
+    right: scale(10),
+    zIndex: 10,
+  },
   row: { flexDirection: 'row', gap: scale(12) },
 
   stepOneContainer: {

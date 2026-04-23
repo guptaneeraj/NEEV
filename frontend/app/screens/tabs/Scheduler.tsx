@@ -12,15 +12,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
 import { useAIStore } from '../../../store/useAIStore';
 import LoadingLogo from '../../../components/LoadingLogo';
 import Animated, { FadeInUp, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Theme } from '../../../constants/Theme';
 import { scale, verticalScale, moderateScale, SCREEN_HEIGHT } from '../../../utils/responsive';
 import NeevModal from '../../../components/NeevModal';
-
-const API_URL = 'https://api.neevios.com';
+import * as directusService from '../../../services/DirectusApiClient';
 
 interface Task {
   id: string;
@@ -50,23 +48,20 @@ export default function Scheduler() {
   };
 
   const loadSchedule = async () => {
+    if (!user?.id) return;
     try {
-      const [scheduleRes, completedRes] = await Promise.all([
-        axios.get(`${API_URL}/api/schedules/current`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${API_URL}/api/tasks/completed`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+      const [scheduleData, completedData] = await Promise.all([
+        directusService.fetchCurrentSchedule(user.id),
+        directusService.fetchCompletedTasks(user.id),
       ]);
 
-      setSchedule(scheduleRes.data);
+      setSchedule({ tasks: scheduleData, week: 1 }); // Mocking week for now
 
       const today = new Date().toISOString().split('T')[0];
       const todayCompleted = new Set(
-        (completedRes.data || [])
+        (completedData || [])
           .filter((t: any) => t.completed_at && t.completed_at.startsWith(today))
-          .map((t: any) => t.task_id)
+          .map((t: any) => t.activity_id?.toString())
       );
       setCompletedTasks(todayCompleted);
     } catch (error) {
@@ -122,12 +117,10 @@ export default function Scheduler() {
       return;
     }
 
+    if (!user?.id) return;
+
     try {
-      await axios.post(
-        `${API_URL}/api/tasks/toggle`,
-        { activity_name: task.title, week: schedule.week },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await directusService.toggleTaskCompletion(user.id, parseInt(task.id), task.title);
 
       setCompletedTasks(new Set(completedTasks).add(task.id));
       triggerCelebration(task.title);

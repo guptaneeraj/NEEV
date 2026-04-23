@@ -115,7 +115,7 @@ const Leaf = ({ color, index, fullScreen }: LeafProps) => {
 };
 
 export const LeavesLayer = ({ color, fullScreen = false }: { color: string; fullScreen?: boolean }) => {
-  const leavesCount = fullScreen ? 120 : 80; // Increased count for full screen for density
+  const leavesCount = fullScreen ? 120 : 80; // Restoring original count as requested
   const leaves = useMemo(() => Array.from({ length: leavesCount }), [leavesCount]);
 
   return (

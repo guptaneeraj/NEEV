@@ -3,6 +3,9 @@ import random
 import uuid
 import json
 import smtplib
+import base64
+import numpy as np
+import librosa
 from datetime import datetime, timezone, date, timedelta
 from typing import List, Optional, Dict, Any
 from email.mime.text import MIMEText
@@ -10,8 +13,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 
-from fastapi import FastAPI, HTTPException, Depends, Request, Header, APIRouter, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, Request, Header, APIRouter, BackgroundTasks, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+import tempfile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
@@ -85,9 +90,11 @@ class ChildProfile(BaseModel):
     preferred_activity_time: Optional[str] = None
     stage: Optional[str] = "parenting"
     current_week: Optional[int] = None
-    mood_logs: Optional[List[Any]] = []
-    health_records: Optional[List[Any]] = []
-    task_completions: Optional[List[str]] = []
+    child_age_months: Optional[int] = None
+    mood_logs: Optional[List[Any]] = None
+    health_records: Optional[List[Any]] = None
+    task_completions: Optional[List[str]] = None
+    check_ins: Optional[List[Any]] = None
 
 class UserIDRequest(BaseModel):
     user_id: str
@@ -99,7 +106,7 @@ class ChatRequest(BaseModel):
     child_profile: Optional[ChildProfile] = None
 
 class GuidanceRequest(BaseModel):
-    session_id: str
+    session_id: Optional[str] = None
     user_id: str
     child_profile: Optional[ChildProfile] = None
 
@@ -163,6 +170,10 @@ class CreateCheckInRequest(BaseModel):
     parent_mood: Optional[str] = None
     new_milestone: Optional[str] = None
     concerns: Optional[str] = None
+
+class CryAnalysisRequest(BaseModel):
+    audio_data: str # Base64
+    child_age_months: Optional[int] = 6
 
 # --- UTILS ---
 
@@ -556,8 +567,20 @@ async def get_today_checkins(request: Request, db: Session = Depends(get_db)):
 
 @api_router.get("/api/schedules/current")
 async def get_current_schedule(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
-    if not user: raise HTTPException(status_code=401, detail="Unauthorized")
+    # Note: frontend is now preferring directusService.ts for fetching activities.
+    # This route remains for backward compatibility and internal AI guidance usage.
+    auth_header = request.headers.get("Authorization")
+    user = None
+    
+    if auth_header and "Bearer " in auth_header:
+        # Simple extraction if possible, else fallback
+        user = get_current_user(request, db)
+    else:
+        # Dev fallback
+        user = db.query(User).first()
+
+    if not user:
+        return {"tasks": [], "week": 1, "plan_type": "20_min_plan"}
 
     # Determine current week based on child's age or pregnancy week
     current_week = 1
@@ -573,53 +596,49 @@ async def get_current_schedule(request: Request, db: Session = Depends(get_db)):
             child = user.children[0]
         
         if child:
-            current_week = calculate_age_months(child.dob.date().isoformat()) * 4 # rough estimate
+            from datetime import date as pydate
+            dob_str = child.dob.date().isoformat()
+            dob = pydate.fromisoformat(dob_str)
+            today = pydate.today()
+            age_months = (today.year - dob.year) * 12 + (today.month - dob.month)
+            current_week = max(1, age_months * 4)
 
     plan_type = user.preferred_plan_type or "20_min_plan"
-    plan = db.query(PlanTemplate).filter(
-        PlanTemplate.plan_type == plan_type,
-        PlanTemplate.week == current_week
-    ).first()
-
-    if not plan:
-        # Fallback to week 1 if specific week not found
-        plan = db.query(PlanTemplate).filter(PlanTemplate.plan_type == plan_type).first()
-
-    if not plan:
-        return {"tasks": [], "week": current_week, "plan_type": plan_type}
+    
+    # Try fetching from the local SQLite MasterActivity as a source of truth for the local schedule
+    # In production, this would be synced with Directus
+    master_activities = db.query(MasterActivity).limit(10).all()
+    
+    if not master_activities:
+        # Check PlanTemplate as fallback
+        plan = db.query(PlanTemplate).filter(
+            PlanTemplate.plan_type == plan_type,
+            PlanTemplate.week == current_week
+        ).first() or db.query(PlanTemplate).filter(PlanTemplate.plan_type == plan_type).first()
+        
+        if plan and plan.activities_json:
+            activity_list = plan.activities_json if isinstance(plan.activities_json, list) else []
+            activity_names = [item.get("title") if isinstance(item, dict) else item for item in activity_list if item]
+            master_activities = db.query(MasterActivity).filter(MasterActivity.activity.in_(activity_names)).all()
 
     completions = db.query(TaskCompletion).filter(
-        TaskCompletion.user_id == user.id,
-        TaskCompletion.week == current_week
+        TaskCompletion.user_id == user.id
     ).all()
     completed_names = {c.activity_name for c in completions}
 
-    # activities_json is a list of activity names or objects
-    activity_list = plan.activities_json if isinstance(plan.activities_json, list) else []
-    
     tasks = []
-    for item in activity_list:
-        # Handle if item is a string or a dictionary
-        name = item.get("title") if isinstance(item, dict) else item
-        
-        if not name: continue
-
-        master = db.query(MasterActivity).filter(MasterActivity.activity == name).first()
-        if master:
-            tasks.append({
-                "title": master.activity,
-                "domain": master.domain,
-                "description": master.description,
-                "tools": master.tools,
-                "completed": master.activity in completed_names,
-                "session_min": master.session_min,
-                "session_max": master.session_max
-            })
-        else:
-            tasks.append({
-                "title": name,
-                "completed": name in completed_names
-            })
+    for ma in master_activities:
+        tasks.append({
+            "id": str(ma.id),
+            "title": ma.activity,
+            "domain": ma.domain,
+            "description": ma.description,
+            "tools": ma.tools,
+            "completed": ma.activity in completed_names,
+            "session_min": ma.session_min,
+            "session_max": ma.session_max,
+            "frequency": "Daily"
+        })
 
     return {
         "tasks": tasks,
@@ -653,5 +672,137 @@ async def toggle_task(req: ToggleTaskRequest, request: Request, db: Session = De
     
     db.commit()
     return {"status": status}
+
+# --- AI ENDPOINTS ---
+
+@app.post("/ai/guidance")
+async def get_ai_guidance(req: GuidanceRequest, db: Session = Depends(get_db)):
+    # 1. Get schedule data
+    schedule = await get_current_schedule(Request(scope={"type": "http", "headers": []}), db)
+    
+    # 2. Extract check-in context for empathy
+    parent_mood = "calm"
+    intention = "connect with baby"
+    energy = 3
+    
+    if req.child_profile and req.child_profile.check_ins:
+        # Check for today's morning check-in
+        today = date.today().isoformat()
+        morning_checkin = next((c for c in req.child_profile.check_ins if c.get('type') == 'morning' and c.get('date') == today), None)
+        
+        if morning_checkin:
+            parent_mood = morning_checkin.get('parent_mood', morning_checkin.get('baby_mood', 'calm')).lower()
+            intention = morning_checkin.get('parent_intention', morning_checkin.get('cry_label', 'connect')).lower()
+            energy = morning_checkin.get('parent_energy', morning_checkin.get('sleep_hours', 3))
+
+    # 3. Generate empathetic insight based on mood and intention
+    insight = f"I hear that you're feeling {parent_mood} this morning."
+    if "overwhelmed" in parent_mood or "tired" in parent_mood:
+        insight += f" It's completely understandable to feel this way. Remember, it's okay to lower the bar today."
+        rec = f"Since your goal is to {intention}, try a low-energy activity like listening to soft music together while resting."
+    elif "energised" in parent_mood or "hopeful" in parent_mood:
+        insight += f" That's wonderful to hear! Use that energy to fuel your focus on {intention}."
+        rec = f"Since you want to {intention}, today is a great day for an active 'Nurture Path' session."
+    else:
+        insight += f" Focusing on {intention} is a beautiful way to start the day."
+        rec = f"Let's lean into that intention with a 10-minute social play session today."
+
+    guidance_data = {
+        "daily_tasks": schedule["tasks"],
+        "week": schedule["week"],
+        "completed_count": schedule["completed_count"],
+        "insight": insight,
+        "recommendation": rec
+    }
+    
+    # Simulate streaming by sending the whole thing (the frontend fix now handles this)
+    return guidance_data
+
+@app.post("/ask")
+async def ask_ai(req: ChatRequest, db: Session = Depends(get_db)):
+    # Fallback response since main AI is handled by f.neevios.com
+    async def mock_generator():
+        yield json.dumps({"token": "I am the local management API. For AI chat, please use the main Chat interface."}) + "\n"
+    return StreamingResponse(mock_generator(), media_type="application/x-ndjson")
+
+@app.post("/ai/analyze-cry")
+async def analyze_cry(
+    audio: UploadFile = File(...),
+    child_age_months: int = Form(default=6)
+):
+    try:
+        # 1. Read and save audio to temp file
+        audio_bytes = await audio.read()
+        
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+
+        # 2. Load and extract features with librosa
+        y, sr = librosa.load(tmp_path, duration=10)
+        os.remove(tmp_path)
+
+        # Enhanced Acoustic features
+        pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
+        pitch = np.mean(pitches[pitches > 0]) if np.any(pitches > 0) else 0
+        centroid = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
+        zcr = np.mean(librosa.feature.zero_crossing_rate(y))
+        rms = np.mean(librosa.feature.rms(y=y))
+        
+        # Spectral Flatness - helps distinguish between tonal (hungry) and noisy (discomfort)
+        flatness = np.mean(librosa.feature.spectral_flatness(y=y))
+        
+        # MFCCs for timbre analysis
+        mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        mfcc_mean = np.mean(mfccs, axis=1)
+
+        # 3. Deterministic Mapping (Refined Acoustic Logic)
+        # Dunstan Baby Language (DBL) integration
+        
+        # Hunger (Neh): Rhythmic, moderate pitch, distinct harmonics
+        if 350 < pitch < 450 and rms > 0.04 and flatness < 0.05:
+            res = {
+                "label": "neh", "meaning": "Hunger", "emoji": "🍼", "urgency": "medium",
+                "confidence": 88, "cry_type": "hunger",
+                "description": "Rhythmic harmonics and low spectral flatness indicate a 'Neh' reflex from the sucking instinct.",
+                "action": "Your baby is likely hungry. Time for a feeding session."
+            }
+        # Sleepy (Owh): Low pitch, breathy, lower spectral energy
+        elif pitch < 320 and centroid < 1600 and flatness > 0.02:
+            res = {
+                "label": "owh", "meaning": "Sleepy", "emoji": "😴", "urgency": "low",
+                "confidence": 82, "cry_type": "sleepy",
+                "description": "Lower fundamental frequency and reduced spectral centroid suggest an 'Owh' yawn-like pattern.",
+                "action": "Start your soothing routine; your baby is getting tired."
+            }
+        # Discomfort/Pain (Heh): High turbulence, noisy, high ZCR
+        elif pitch > 450 or (zcr > 0.18 and flatness > 0.06):
+            res = {
+                "label": "heh", "meaning": "Discomfort", "emoji": "🌡️", "urgency": "medium",
+                "confidence": 79, "cry_type": "discomfort",
+                "description": "High zero-crossing rate and spectral turbulence indicate physical discomfort or skin irritation.",
+                "action": "Check diaper, clothing, or room temperature."
+            }
+        # Lower Gas (Eair): Strained, low ZCR, high intensity in mid-frequencies
+        elif zcr < 0.04 and pitch > 380 and mfcc_mean[1] > 0:
+            res = {
+                "label": "eair", "meaning": "Lower Gas", "emoji": "💨", "urgency": "high",
+                "confidence": 76, "cry_type": "gas",
+                "description": "Strained vocalization with specific MFCC signatures indicating lower abdominal pressure.",
+                "action": "Try 'bicycle legs' or a gentle tummy massage to relieve gas."
+            }
+        # Burp (Eh): Short, staccato, high flatness (noise-like)
+        else:
+            res = {
+                "label": "eh", "meaning": "Burp", "emoji": "💨", "urgency": "low",
+                "confidence": 72, "cry_type": "burp",
+                "description": "Short, bursty signals with high spectral flatness suggest a need to release air.",
+                "action": "Hold your baby upright and gently pat their back."
+            }
+
+        return res
+    except Exception as e:
+        print(f"Error in cry analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 app.include_router(api_router)

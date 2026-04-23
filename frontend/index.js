@@ -1,6 +1,6 @@
 import { AppRegistry } from 'react-native';
 import App from './App';
+import { name as appName } from './app.json';
 
-// Ensure the name matches your project name in app.json or native code
-AppRegistry.registerComponent('NeevWellnessApp', () => App);
-AppRegistry.registerComponent('main', () => App);
+// appName is "neev-wellness-app" from app.json
+AppRegistry.registerComponent(appName, () => App);

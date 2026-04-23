@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Theme } from '../../../constants/Theme';
 import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
 import AppEmoji from '../../../components/AppEmoji';
 import NeevModal from '../../../components/NeevModal';
-
-const API_URL = "https://api.neevios.com";
+import * as directusService from '../../../services/DirectusApiClient';
 
 const PLAN_OPTIONS = [
   { label: '20 Min Plan', value: '20_min_plan', icon: '⏱️' },
@@ -32,7 +30,7 @@ const SPECIFIC_TIMES: any = {
 export default function RegisterDetails() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { token, fetchProfile } = useAuth();
+  const { user, token, fetchProfile, updateUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [subStep, setSubStep] = useState(1); // 1: Diet, 2: Activity Plan
@@ -60,34 +58,42 @@ export default function RegisterDetails() {
 
     setLoading(true);
     try {
-      await axios.patch(`${API_URL}/api/user/update`, {
-        relationship_type: relationship,
-        preferred_plan_type: planType,
-        preferred_time_of_day: timeOfDay,
-        preferred_specific_time: specificTime,
-        stage: stage
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      // 1. Update User Profile in Directus
+      if (user?.id) {
+        await updateUser({
+          relationship_type: relationship,
+          preferred_activity_time: specificTime,
+          onboarding_complete: true,
+          marital_status: stage // Reusing field for stage context if needed, or update schema
+        });
+      }
 
+      // 2. Handle Child or Pregnancy Info in Directus
       if (stage === 'pregnancy') {
-        await axios.post(`${API_URL}/api/user/pregnancy`, {
-          pregnant_person_name: 'Self',
-          is_user_pregnant: true,
-          relationship_to_pregnant: 'Self',
-          current_week: pregnancyWeek,
-          diet_preference: diet
-        }, { headers: { Authorization: `Bearer ${token}` } });
-      } else {
-        await axios.post(`${API_URL}/api/user/child`, {
+         // Pregnancy info sync
+         if (user?.id) {
+            await DirectusApiClient.savePregnancyInfo({
+              user_id: user.id,
+              current_week: parseInt(pregnancyWeek) || 1
+            });
+         }
+      } else if (user?.id) {
+        // Create child in Directus using the service
+        await DirectusApiClient.createChild({
+          user_id: user.id,
           name: childName,
           dob: childDOB,
           sex: childSex,
-          diet_preference: diet
-        }, { headers: { Authorization: `Bearer ${token}` } });
+          diet_preference: diet,
+          preferred_plan: planType,
+          base_wake_window_minutes: planType === '20_min_plan' ? 20 : planType === '40_min_plan' ? 40 : 60
+        });
       }
 
       await fetchProfile();
       navigation.replace('Home');
     } catch (error) {
+      console.error(error);
       showAlert('Error', 'Failed to save your profile. Please check your connection.', '❌');
     } finally {
       setLoading(false);

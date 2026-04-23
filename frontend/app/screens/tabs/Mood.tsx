@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
 import { useAIStore } from '../../../store/useAIStore';
 import LoadingLogo from '../../../components/LoadingLogo';
 import { Theme } from '../../../constants/Theme';
 import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
 import AppEmoji from '../../../components/AppEmoji';
 import NeevModal from '../../../components/NeevModal';
+import * as directusService from '../../../services/DirectusApiClient';
 
-const API_URL = 'https://api.neevios.com';
 const MOODS = [
   {emoji: '😊', label: 'Happy'},
   {emoji: '😔', label: 'Sad'},
@@ -22,7 +21,7 @@ const MOODS = [
 ];
 
 export default function MoodTracking() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const { processChat } = useAIStore();
 
   const [logs, setLogs] = useState([]);
@@ -41,15 +40,13 @@ export default function MoodTracking() {
 
   useEffect(() => {
     loadLogs();
-  }, []);
+  }, [user?.id]);
 
   const loadLogs = async () => {
+    if (!user?.id) return;
     try {
-      const response = await axios.get(`${API_URL}/api/mood/logs`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { days: 30 }
-      });
-      setLogs(response.data);
+      const data = await directusService.fetchMoodLogs(user.id);
+      setLogs(data);
     } catch (error) {
       console.error('Error loading mood logs:', error);
     } finally {
@@ -95,12 +92,16 @@ export default function MoodTracking() {
     const currentMood = selectedMood;
     const currentNotes = notes;
 
+    if (!user?.id) return;
+
     try {
-      await axios.post(
-        `${API_URL}/api/mood/log`,
-        { mood: currentMood, notes: currentNotes },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await directusService.saveMoodLog({
+          user_id: user.id,
+          mood: currentMood,
+          notes: currentNotes,
+          date: new Date().toISOString()
+      });
+
       setModalVisible(false);
       setSelectedMood('');
       setNotes('');

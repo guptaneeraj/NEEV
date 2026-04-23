@@ -15,23 +15,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
+import * as directusService from '../../../services/DirectusApiClient';
 import { Theme } from '../../../constants/Theme';
-import DatePickerField from '../../../components/DatePickerField';
 import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
+import DatePickerField from '../../../components/DatePickerField';
+import TimePickerField from '../../../components/TimePickerField';
 import NeevModal from '../../../components/NeevModal';
-
-const API_URL = 'https://api.neevios.com';
 
 const DIET_OPTIONS = ['Vegetarian', 'Eggetarian', 'Non-vegetarian'];
 const SEX_OPTIONS = ['Male', 'Female', 'Prefer not to say'];
 
 export default function AddChild() {
   const navigation = useNavigation<any>();
-  const { token, fetchProfile } = useAuth();
+  const { user, fetchProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
+  const [timeOfBirth, setTimeOfBirth] = useState('');
   const [sex, setSex] = useState('');
   const [diet, setDiet] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -53,21 +53,26 @@ export default function AddChild() {
       return;
     }
 
+    if (!user?.id) return;
+
     setLoading(true);
     try {
-      await axios.post(
-        `${API_URL}/api/user/child`,
-        { name, dob, sex, diet_preference: diet },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
+      await directusService.createChild({
+        user_id: user.id,
+        name,
+        dob,
+        time_of_birth: timeOfBirth,
+        sex,
+        diet_preference: diet
+      });
+
       await fetchProfile();
       showAlert('Success!', `${name}'s profile has been created successfully.`, '🎉', () => {
         setModalVisible(false);
         navigation.goBack();
       });
     } catch (error: any) {
-      showAlert('Error', error.response?.data?.detail || 'We encountered an issue while adding the child profile. Please try again.', '❌');
+      showAlert('Error', error.message || 'We encountered an issue while adding the child profile. Please try again.', '❌');
     } finally {
       setLoading(false);
     }
@@ -103,6 +108,7 @@ export default function AddChild() {
             <View style={styles.section}>
               <Text style={styles.label}>Birth Details</Text>
               <DatePickerField label="Date of Birth" value={dob} onChange={setDob} />
+              <TimePickerField label="Time of Birth" value={timeOfBirth} onChange={setTimeOfBirth} />
             </View>
 
             <View style={styles.section}>

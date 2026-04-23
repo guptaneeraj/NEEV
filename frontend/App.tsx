@@ -19,6 +19,7 @@ import Health from './app/screens/tabs/Health';
 import Profile from './app/screens/tabs/Profile';
 import AIChat from './app/screens/main/ai-chat';
 import ActivityGuidance from './app/screens/main/activity-guidance';
+import ActivityHistory from './app/screens/main/activity-history';
 import PulseScreen from './app/screens/main/PulseScreen';
 import AgeGuide from './app/screens/main/AgeGuide';
 import HelpCenter from './app/screens/main/help-center';
@@ -30,6 +31,8 @@ import PrivacySecurity from './app/screens/tabs/PrivacySecurity';
 import AboutNeev from './app/screens/tabs/AboutNeev';
 import PersonalInfo from './app/screens/tabs/PersonalInfo';
 import ChildProfile from './app/screens/tabs/ChildProfile';
+import PulseHistory from './app/screens/main/PulseHistory';
+import CryTranslator from './app/screens/main/CryTranslator';
 
 const Stack = createNativeStackNavigator();
 
@@ -96,7 +99,8 @@ const AppContent = () => {
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="AIChat" component={AIChat} />
         <Stack.Screen name="ActivityGuidance" component={ActivityGuidance} />
-        <Stack.Screen name="PulseScreen" component={PulseScreen} />
+        <Stack.Screen name="ActivityHistory" component={ActivityHistory} />
+        <Stack.Screen name="Pulse" component={PulseScreen} />
         <Stack.Screen name="AgeGuide" component={AgeGuide} />
         <Stack.Screen name="HelpCenter" component={HelpCenter} />
         <Stack.Screen name="PersonalInfo" component={PersonalInfo} />
@@ -107,6 +111,8 @@ const AppContent = () => {
         <Stack.Screen name="Subscription" component={Subscription} />
         <Stack.Screen name="PrivacySecurity" component={PrivacySecurity} />
         <Stack.Screen name="AboutNeev" component={AboutNeev} />
+        <Stack.Screen name="PulseHistory" component={PulseHistory} />
+        <Stack.Screen name="CryTranslator" component={CryTranslator} />
       </Stack.Navigator>
     </NavigationContainer>
   );

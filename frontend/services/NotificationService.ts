@@ -23,44 +23,54 @@ export const NotificationService = {
     });
   },
 
-  // Schedule morning check-in (default 8:00 AM daily)
+  // Schedule morning checkin (default 8:00 AM daily)
   scheduleMorningCheckin: async (hour = 8, minute = 0) => {
-    await notifee.cancelNotification('morning-checkin');
-    const date = new Date();
-    date.setHours(hour, minute, 0, 0);
-    if (date <= new Date()) date.setDate(date.getDate() + 1);
-    await notifee.createTriggerNotification(
-      {
-        id: 'morning-checkin',
-        title: '🌅 Good Morning!',
-        body: 'How did your baby sleep? Take 30 seconds to log the morning check-in.',
-        android: {
-          channelId: 'checkin',
-          pressAction: { id: 'default' }
+    try {
+      const active = await notifee.getTriggerNotificationIds();
+      if (active.includes('morning-checkin')) return; // Don't re-schedule if already set
+
+      const date = new Date();
+      date.setHours(hour, minute, 0, 0);
+      if (date <= new Date()) date.setDate(date.getDate() + 1);
+
+      await notifee.createTriggerNotification(
+        {
+          id: 'morning-checkin',
+          title: '🌅 Good Morning!',
+          body: 'How did your baby sleep? Take 30 seconds to log the morning check-in.',
+          android: {
+            channelId: 'checkin',
+            pressAction: { id: 'default' }
+          },
         },
-      },
-      { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.DAILY }
-    );
+        { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.DAILY }
+      );
+    } catch (e) { console.log('Notif Error:', e); }
   },
 
-  // Schedule evening check-in (default 7:00 PM daily)
+  // Schedule evening checkin (default 7:00 PM daily)
   scheduleEveningCheckin: async (hour = 19, minute = 0) => {
-    await notifee.cancelNotification('evening-checkin');
-    const date = new Date();
-    date.setHours(hour, minute, 0, 0);
-    if (date <= new Date()) date.setDate(date.getDate() + 1);
-    await notifee.createTriggerNotification(
-      {
-        id: 'evening-checkin',
-        title: '🌙 Evening Check-in',
-        body: 'How was your day with baby? Log feeds, mood and any new milestones.',
-        android: {
-          channelId: 'checkin',
-          pressAction: { id: 'default' }
+    try {
+      const active = await notifee.getTriggerNotificationIds();
+      if (active.includes('evening-checkin')) return;
+
+      const date = new Date();
+      date.setHours(hour, minute, 0, 0);
+      if (date <= new Date()) date.setDate(date.getDate() + 1);
+
+      await notifee.createTriggerNotification(
+        {
+          id: 'evening-checkin',
+          title: '🌙 Evening Check-in',
+          body: 'How was your day with baby? Log feeds, mood and any new milestones.',
+          android: {
+            channelId: 'checkin',
+            pressAction: { id: 'default' }
+          },
         },
-      },
-      { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.DAILY }
-    );
+        { type: TriggerType.TIMESTAMP, timestamp: date.getTime(), repeatFrequency: RepeatFrequency.DAILY }
+      );
+    } catch (e) { console.log('Notif Error:', e); }
   },
 
   // Schedule activity reminder based on user preferred_activity_time

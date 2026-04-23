@@ -7,6 +7,7 @@ interface Props {
   label?: string;
   value?: string; // Expecting YYYY-MM-DD
   onChange?: (date: string) => void;
+  labelColor?: string;
 }
 
 const MONTHS = [
@@ -14,7 +15,7 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December"
 ];
 
-export default function DatePickerField({ label, value, onChange }: Props) {
+export default function DatePickerField({ label, value, onChange, labelColor }: Props) {
   const [day, setDay] = useState('');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
@@ -117,7 +118,7 @@ export default function DatePickerField({ label, value, onChange }: Props) {
 
   const Selector = ({ val, placeholder, type }: any) => (
     <TouchableOpacity
-      style={styles.selector}
+      style={[styles.selector, val && styles.selectorActive]}
       onPress={() => {
         setActivePicker(type);
         setModalVisible(true);
@@ -131,7 +132,7 @@ export default function DatePickerField({ label, value, onChange }: Props) {
 
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, labelColor ? { color: labelColor } : {}]}>{label}</Text>}
 
       <View style={styles.row}>
         <View style={{ flex: 1.5 }}>
@@ -219,6 +220,10 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     color: Theme.colors.primary,
     fontWeight: '600',
+  },
+  selectorActive: {
+    backgroundColor: Theme.colors.softGreen,
+    borderColor: Theme.colors.secondary,
   },
   placeholder: {
     color: '#B0BDB5',

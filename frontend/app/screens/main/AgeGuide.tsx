@@ -5,11 +5,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAIStore } from '../../../store/useAIStore';
-import axios from 'axios';
+import * as directusService from '../../../services/DirectusApiClient';
 import { Theme } from '../../../constants/Theme';
 import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
-
-const API_URL = 'https://api.neevios.com';
 
 export default function AgeGuide() {
   const navigation = useNavigation<any>();
@@ -42,22 +40,21 @@ export default function AgeGuide() {
   };
 
   const fetchActivities = async () => {
+    if (!user?.id) return;
     try {
-      const res = await axios.get(`${API_URL}/api/schedules/current`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setActivities(res.data.tasks || [
-        { title: "Tummy Time Pro", description: "Advanced neck strength exercises" },
-        { title: "Object Tracking", description: "Follow the bright ball" }
-      ]);
-    } catch (e) {}
+      const data = await directusService.fetchCurrentSchedule(user.id);
+      setActivities(data || []);
+    } catch (e) {
+      console.error('Error fetching activities:', e);
+    }
   };
 
   const handleActivityPress = (act: any) => {
     // Navigate to ActivityGuidance instead of AIChat
     navigation.navigate('ActivityGuidance', {
       activity: {
-        title: act.title,
+        id: act.id,
+        name: act.name,
         description: act.description,
         type: 'Extra Activity'
       },
@@ -119,7 +116,7 @@ export default function AgeGuide() {
             onPress={() => handleActivityPress(act)}
           >
             <View style={{flex: 1}}>
-              <Text style={styles.actTitle}>{act.title}</Text>
+              <Text style={styles.actTitle}>{act.name}</Text>
               <Text style={styles.actDesc} numberOfLines={1}>{act.description}</Text>
             </View>
             <Ionicons name="chevron-forward" size={moderateScale(20)} color={Theme.colors.secondary} />

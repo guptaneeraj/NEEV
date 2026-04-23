@@ -13,12 +13,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
+import * as directusService from '../../../services/DirectusApiClient';
 import { Theme } from '../../../constants/Theme';
 import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
 import NeevModal from '../../../components/NeevModal';
-
-const API_URL = 'https://api.neevios.com';
 
 const ACTIVITY_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Custom time'];
 const RELATIONSHIP_OPTIONS = [
@@ -50,34 +48,26 @@ export default function EditProfile() {
   }, []);
 
   const loadProfile = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/user/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = response.data;
-      if (data.relationship_type) setRelationship(data.relationship_type);
-      if (data.preferred_activity_time) setActivityTime(data.preferred_activity_time);
-      if (data.pregnancy_info?.current_week) setPregnancyWeek(data.pregnancy_info.current_week.toString());
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    }
+    if (!user) return;
+    if (user.relationship_type) setRelationship(user.relationship_type);
+    if (user.preferred_activity_time) setActivityTime(user.preferred_activity_time);
+    if (user.pregnancy_info?.current_week) setPregnancyWeek(user.pregnancy_info.current_week.toString());
   };
 
   const handleSave = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
-      await axios.patch(
-        `${API_URL}/api/user/update`,
-        { relationship_type: relationship, preferred_activity_time: activityTime },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await directusService.updateUser(user.id, {
+        relationship_type: relationship,
+        preferred_activity_time: activityTime
+      });
 
       if (user?.stage === 'pregnancy' && pregnancyWeek) {
-        await axios.post(
-          `${API_URL}/api/user/pregnancy`,
-          { current_week: parseInt(pregnancyWeek) },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await directusService.savePregnancyInfo({
+          user_id: user.id,
+          current_week: parseInt(pregnancyWeek)
+        });
       }
 
       await fetchProfile();
@@ -86,7 +76,7 @@ export default function EditProfile() {
         navigation.goBack();
       });
     } catch (error: any) {
-      showAlert('Update Failed', error.response?.data?.detail || 'We couldn\'t update your profile at this time.', '❌');
+      showAlert('Update Failed', error.message || 'We couldn\'t update your profile at this time.', '❌');
     } finally {
       setLoading(false);
     }

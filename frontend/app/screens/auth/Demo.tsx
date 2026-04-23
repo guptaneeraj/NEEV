@@ -8,7 +8,9 @@ import { Theme } from '../../../constants/Theme';
 import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
 import NeevModal from '../../../components/NeevModal';
 
-const API_URL = 'https://api.neevios.com';
+import { BACKEND_URL } from '@env';
+
+const API_URL = BACKEND_URL;
 
 export default function Demo() {
   const navigation = useNavigation<any>();

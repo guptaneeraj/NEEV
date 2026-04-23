@@ -21,13 +21,14 @@ import AppEmoji from './AppEmoji';
 interface NeevModalProps {
   visible: boolean;
   title: string;
-  message: string;
+  message?: string;
   icon?: string;
   confirmText?: string;
   cancelText?: string;
-  onConfirm: () => void;
+  onConfirm?: () => void;
   onCancel?: () => void;
   type?: 'default' | 'danger';
+  children?: React.ReactNode;
 }
 
 const { width } = Dimensions.get('window');
@@ -42,6 +43,7 @@ const NeevModal: React.FC<NeevModalProps> = ({
   onConfirm,
   onCancel,
   type = 'default',
+  children,
 }) => {
   if (!visible) return null;
 
@@ -70,30 +72,36 @@ const NeevModal: React.FC<NeevModalProps> = ({
           )}
 
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          {message && <Text style={styles.message}>{message}</Text>}
 
-          <View style={styles.buttonContainer}>
-            {onCancel && (
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={onCancel}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>{cancelText}</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[
-                styles.confirmButton,
-                type === 'danger' && styles.dangerButton,
-                !onCancel && { width: '100%' }
-              ]}
-              onPress={onConfirm}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.confirmButtonText}>{confirmText}</Text>
-            </TouchableOpacity>
-          </View>
+          {children}
+
+          {(onConfirm || onCancel) && (
+            <View style={styles.buttonContainer}>
+              {onCancel && (
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={onCancel}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelButtonText}>{cancelText}</Text>
+                </TouchableOpacity>
+              )}
+              {onConfirm && (
+                <TouchableOpacity
+                  style={[
+                    styles.confirmButton,
+                    type === 'danger' && styles.dangerButton,
+                    !onCancel && { width: '100%' }
+                  ]}
+                  onPress={onConfirm}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.confirmButtonText}>{confirmText}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </Animated.View>
       </View>
     </Modal>

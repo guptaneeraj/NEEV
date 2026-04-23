@@ -2,26 +2,53 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { BarChart, PieChart } from 'react-native-gifted-charts';
-import axios from 'axios';
+import { LazyBarChart as BarChart, LazyPieChart as PieChart } from '../../../components/LazyCharts';
 import { Theme } from '../../../constants/Theme';
 import { scale, verticalScale, moderateScale, SCREEN_WIDTH } from '../../../utils/responsive';
-
-const API_URL = 'https://api.neevios.com';
+import * as directusService from '../../../services/DirectusApiClient';
 
 export default function Analysis() {
-  const { token } = useAuth();
+  const { user } = useAuth();
+  const navigation = useNavigation<any>();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadStats = async () => {
+    if (!user?.id) return;
     try {
-      const response = await axios.get(`${API_URL}/api/analysis/stats`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const [activities, history] = await Promise.all([
+        directusService.fetchCurrentSchedule(user.id),
+        directusService.fetchCompletedTasks(user.id),
+      ]);
+
+      const totalTasks = activities.length;
+      const completedTasks = history.length;
+      const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      // Group history by date
+      const completionByDate: Record<string, number> = {};
+      history.forEach((h: any) => {
+        const date = h.completed_at?.split('T')[0];
+        if (date) {
+          completionByDate[date] = (completionByDate[date] || 0) + 1;
+        }
       });
-      setStats(response.data);
+
+      const formattedHistory = Object.keys(completionByDate).map(date => ({
+        date,
+        count: completionByDate[date]
+      })).sort((a, b) => a.date.localeCompare(b.date));
+
+      setStats({
+        completed_tasks: completedTasks,
+        total_tasks: totalTasks,
+        completion_percentage: percentage,
+        weekly_adherence: percentage, // Simplified for now
+        completion_by_date: formattedHistory
+      });
     } catch (error) {
       console.error('Error loading stats:', error);
     } finally {
@@ -31,10 +58,8 @@ export default function Analysis() {
   };
 
   useEffect(() => {
-    if (token) {
-      loadStats();
-    }
-  }, [token]);
+    loadStats();
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
