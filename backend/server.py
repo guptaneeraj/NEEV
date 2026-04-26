@@ -119,6 +119,10 @@ class UpdateProfileRequest(BaseModel):
 class OTPRequest(BaseModel):
     identifier: str
 
+class WishlistRequest(BaseModel):
+    email: str
+    category: str = "parent"
+
 class OTPVerifyRequest(BaseModel):
     identifier: str
     otp: str
@@ -328,6 +332,28 @@ async def send_otp(background_tasks: BackgroundTasks, req: OTPRequest):
         background_tasks.add_task(send_email_otp, identifier, otp_code)
 
     return {"message": "OTP sent successfully"}
+
+@api_router.post("/api/wishlist")
+async def wishlist_bridge(req: WishlistRequest):
+    DIRECTUS_URL = "https://directus.neevios.com"
+    DIRECTUS_TOKEN = "KYe03vXlzO8-P1ec00OzGNJpFSHmyYj3"
+    
+    try:
+        import requests
+        response = requests.post(
+            f"{DIRECTUS_URL}/items/Wishlist",
+            headers={"Authorization": f"Bearer {DIRECTUS_TOKEN}", "Content-Type": "application/json"},
+            json={"email": req.email.strip(), "category": req.category, "status": "published"}
+        )
+        data = response.json()
+        if not response.ok:
+            if "RECORD_NOT_UNIQUE" in str(data):
+                raise HTTPException(status_code=400, detail="You are already on our waitlist!")
+            raise HTTPException(status_code=response.status_code, detail="Directus rejection")
+        return {"success": True}
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/api/auth/verify-otp")
 async def verify_otp(req: OTPVerifyRequest, db: Session = Depends(get_db)):
